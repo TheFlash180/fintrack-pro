@@ -1,0 +1,1 @@
+﻿applied 2026-07-04 via Claude (Supabase MCP) - kept in repo as the schema of record

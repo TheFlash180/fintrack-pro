@@ -1,0 +1,209 @@
+/* FinTrack Pro — dark graphite, teal identity. */
+
+:root {
+  --bg: #14171c;
+  --surface: #1c2027;
+  --surface-2: #232833;
+  --border: #2b313c;
+  --text: #e8eaf0;
+  --dim: #8b93a3;
+  --accent: #2dd4bf;          /* FinTrack identity — UI accents */
+  --income: #0d9488;          /* validated chart series */
+  --expense: #8b5cf6;         /* validated chart series */
+  --neg: #f87171;             /* reserved: negative / over budget */
+  --dash-accent: var(--accent);
+
+  --font-display: 'Sora', sans-serif;
+  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { background: var(--bg); }
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px 14px calc(84px + env(safe-area-inset-bottom));
+}
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---------- header ---------- */
+
+.page-head { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 14px; }
+.page-head h1 { font-size: 1.35rem; }
+.page-head h1 .tint { color: var(--dash-accent); }
+.page-head .sub { font-size: 0.75rem; color: var(--dim); }
+.signout { background: none; border: none; color: var(--dim); font-size: 0.75rem; cursor: pointer;
+  font-family: var(--font-body); text-decoration: underline; }
+
+/* ---------- cards & tiles ---------- */
+
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
+}
+.card h3 { font-size: 0.8rem; color: var(--dim); font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; margin-bottom: 12px; font-family: var(--font-body); }
+
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 14px; min-width: 0; }
+.tile .label { font-size: 0.68rem; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; }
+.tile .value { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 600; margin-top: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .value.pos { color: var(--accent); }
+.tile .value.neg { color: var(--neg); }
+
+/* ---------- month picker ---------- */
+
+.month-picker { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
+.month-picker button {
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  border-radius: 10px; padding: 7px 13px; cursor: pointer; font-family: var(--font-body);
+  font-weight: 600; font-size: 0.9rem;
+}
+.month-picker button:disabled { opacity: 0.35; cursor: default; }
+.month-picker .label { font-family: var(--font-display); font-size: 0.95rem; min-width: 150px;
+  text-align: center; }
+.month-picker .all-toggle { font-size: 0.75rem; padding: 6px 10px; }
+.month-picker .all-toggle.on { border-color: var(--dash-accent); color: var(--dash-accent); }
+
+/* ---------- category ranked list ---------- */
+
+.cat-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 7px 0; }
+.cat-row .name { font-size: 0.85rem; font-weight: 600; }
+.cat-row .amt { font-family: var(--font-mono); font-size: 0.82rem; text-align: right; }
+.cat-row .pct { color: var(--dim); font-size: 0.72rem; margin-left: 6px; }
+.cat-bar-track { grid-column: 1 / -1; height: 6px; border-radius: 4px; background: var(--surface-2); }
+.cat-bar { height: 100%; border-radius: 4px; background: var(--dash-accent); min-width: 2px; }
+
+/* ---------- transactions list ---------- */
+
+.tx-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 9px 0; border-bottom: 1px dashed var(--border); }
+.tx-row:last-child { border-bottom: none; }
+.tx-main { min-width: 0; }
+.tx-desc { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-meta { font-size: 0.7rem; color: var(--dim); margin-top: 2px; }
+.tx-amt { font-family: var(--font-mono); font-size: 0.85rem; white-space: nowrap; }
+.tx-amt.pos { color: var(--accent); }
+.tx-amt.neg { color: var(--text); }
+.tx-actions button { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 0.8rem;
+  padding: 2px 6px; }
+
+/* ---------- budgets ---------- */
+
+.budget-row { padding: 8px 0; }
+.budget-row .head { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 5px; }
+.budget-row .head .mono { color: var(--dim); }
+.budget-track { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.budget-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+.budget-fill.over { background: var(--neg); }
+.budget-over-label { color: var(--neg); font-weight: 700; }
+.budget-edit { display: flex; gap: 8px; margin-top: 10px; }
+.budget-edit select, .budget-edit input { flex: 1; }
+
+/* ---------- comparison table ---------- */
+
+.compare-callout { font-size: 0.95rem; font-weight: 600; padding: 12px 14px; border-radius: 10px;
+  background: var(--surface-2); margin-bottom: 12px; line-height: 1.5; }
+.compare-callout .mono { font-size: 0.9rem; }
+.delta-up { color: var(--accent); }
+.delta-down { color: var(--neg); }
+table.compare { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+table.compare th { text-align: right; color: var(--dim); font-weight: 600; padding: 6px 4px;
+  border-bottom: 1px solid var(--border); }
+table.compare th:first-child, table.compare td:first-child { text-align: left; }
+table.compare td { padding: 6px 4px; text-align: right; font-family: var(--font-mono);
+  border-bottom: 1px dashed var(--border); }
+table.compare tr:last-child td { border-bottom: none; }
+
+/* ---------- forms ---------- */
+
+input, select, textarea {
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 10px; padding: 9px 12px; font-family: var(--font-body); font-size: 0.9rem;
+  outline: none; max-width: 100%;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+textarea { width: 100%; min-height: 120px; font-family: var(--font-mono); font-size: 0.78rem; }
+
+.btn {
+  background: var(--accent); color: #0b2422; border: none; border-radius: 10px;
+  padding: 10px 18px; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-danger { background: transparent; border: 1px solid var(--neg); color: var(--neg); }
+
+/* ---------- import ---------- */
+
+.import-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.import-tabs button {
+  background: transparent; border: 1px solid var(--border); color: var(--dim); border-radius: 999px;
+  padding: 7px 14px; font-family: var(--font-body); font-weight: 600; font-size: 0.8rem; cursor: pointer;
+}
+.import-tabs button.active { border-color: var(--accent); color: var(--accent); }
+
+.review-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+.review-table th { text-align: left; color: var(--dim); padding: 6px 4px; border-bottom: 1px solid var(--border); }
+.review-table td { padding: 4px 2px; border-bottom: 1px dashed var(--border); }
+.review-table input, .review-table select { padding: 5px 7px; border-radius: 7px; font-size: 0.75rem; width: 100%; }
+.review-table td.num input { font-family: var(--font-mono); text-align: right; }
+.review-table tr.dup { opacity: 0.45; }
+.dup-tag { font-size: 0.65rem; color: var(--neg); font-weight: 700; white-space: nowrap; }
+.table-scroll { overflow-x: auto; }
+
+/* ---------- bottom nav ---------- */
+
+.tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+  background: rgba(20, 23, 28, 0.96); backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: center; gap: 4px;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+}
+.tabbar a {
+  flex: 1; max-width: 130px; text-align: center; text-decoration: none;
+  color: var(--dim); font-size: 0.72rem; font-weight: 700; padding: 8px 4px;
+  border-radius: 10px; letter-spacing: 0.02em;
+}
+.tabbar a .ico { display: block; font-size: 1.05rem; margin-bottom: 2px; }
+.tabbar a.active { color: var(--tab-accent, var(--accent)); background: var(--surface); }
+
+/* ---------- states ---------- */
+
+.empty-state { text-align: center; color: var(--dim); padding: 34px 16px; font-size: 0.88rem; }
+.error-banner { background: rgba(248, 113, 113, 0.12); border: 1px solid var(--neg);
+  border-radius: 10px; padding: 10px 14px; font-size: 0.82rem; margin-bottom: 12px; }
+.notice { background: var(--surface-2); border-radius: 10px; padding: 10px 14px;
+  font-size: 0.8rem; color: var(--dim); margin-bottom: 12px; line-height: 1.5; }
+
+.skeleton { border-radius: var(--radius); background: linear-gradient(100deg,
+  var(--surface) 40%, var(--surface-2) 50%, var(--surface) 60%);
+  background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ---------- login ---------- */
+
+.login-wrap { min-height: 70vh; display: flex; align-items: center; justify-content: center; }
+.login-card { width: 100%; max-width: 360px; }
+.login-card h1 { font-size: 1.5rem; margin-bottom: 4px; }
+.login-card h1 span { color: var(--accent); }
+.login-card p { color: var(--dim); font-size: 0.85rem; margin-bottom: 18px; }
+.login-card form { display: flex; flex-direction: column; gap: 10px; }

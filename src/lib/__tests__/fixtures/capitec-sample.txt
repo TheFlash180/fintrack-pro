@@ -1,0 +1,12 @@
+Capitec Bank Limited Tax Invoice
+Account Statement Mr R Trollip
+Statement Period: 01/06/2026 - 30/06/2026
+Date Posting Date Description Money In (R) Money Out (R) Balance (R)
+01/06/2026 01/06/2026 Salary Payment Employer XYZ 25,000.00 27,450.10
+02/06/2026 02/06/2026 Purchase Checkers Sandton -845.50 26,604.60
+03/06/2026 03/06/2026 Purchase Engen Rivonia -700.00 25,904.60
+05/06/2026 05/06/2026 Netflix Subscription -199.00 25,705.60
+07/06/2026 08/06/2026 Payment Received J Smith 500.00 26,205.60
+10/06/2026 10/06/2026 Monthly Account Admin Fee -7.50 26,198.10
+12/06/2026 12/06/2026 Purchase Pick n Pay Family 1,200.00 24,998.10
+End of statement
