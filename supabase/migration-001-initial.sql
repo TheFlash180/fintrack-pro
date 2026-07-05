@@ -12,10 +12,9 @@ create table fintrack_allowlist (
 alter table fintrack_allowlist enable row level security;
 -- no policies: invisible through the API; only definer functions/triggers read it
 
-insert into fintrack_allowlist (email, owner_key, display_name)
-values ('rickust18@gmail.com', 'rickus', 'Rickus');
--- Anjoné's row is added once her email is known:
--- insert into fintrack_allowlist values ('her@email', 'anjone', 'Anjoné');
+insert into fintrack_allowlist (email, owner_key, display_name) values
+  ('rickust18@gmail.com', 'rickus', 'Rickus'),
+  ('anjonemaritz01@gmail.com', 'anjone', 'Anjoné');
 
 create table profiles (
   id uuid primary key references auth.users(id) on delete cascade,
