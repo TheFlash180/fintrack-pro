@@ -1,0 +1,7 @@
+Nr,Account,Posting Date,Transaction Date,Description,Original Description,Parent Category,Category,Money In,Money Out,Fee,Balance
+1,1466139852,2026-04-01,2026-04-01 10:27,Banking App Transfer to Nuwe Foon: Transfer,Transfer,Transfer,Transfer,,-1000.00,,69490.73
+3,1466139852,2026-04-01,2026-04-01 19:23,Debit Order Fee,Debit Order Fee,Fees,Fees,,,-3.00,68489.73
+17,1466139852,2026-04-06,2026-04-04 13:57,Checkers Sb079461 (Card 4481),Checkers Fresh X Desi SB079461 ZA,Food,Groceries,,-1505.46,,65394.21
+49,1466139852,2026-04-25,2026-04-25 01:05,Payment Received: Salary Salary 3125913287,SALARY SALARY 3125913287,Salary,Salary,54828.38,,,105556.25
+63,1466139852,2026-04-30,2026-05-01 01:14,Interest Received,Interest Received,Interest,Interest,116.92,,,101940.60
+163,1466139852,2026-06-18,2026-06-18 03:08,Purchase Refund: Cc Outdoor Lonehill (Card 9775),CC Outdoor Lonehill,Refunds,Refunds,799.99,,,84652.25

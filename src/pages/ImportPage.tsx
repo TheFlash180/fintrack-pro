@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { categorize } from '../lib/categorize';
+import { categorizeWithHint } from '../lib/categorize';
 import {
   autoMapColumns,
   extractRows,
@@ -17,8 +17,8 @@ import { ReviewTable } from '../components/ReviewTable';
 type Source = 'csv' | 'pdf' | 'paste' | 'manual';
 
 const SOURCE_LABEL: Record<Source, string> = {
-  csv: 'CSV (FNB)',
-  pdf: 'PDF (Capitec)',
+  csv: 'CSV',
+  pdf: 'PDF',
   paste: 'Paste',
   manual: 'Manual',
 };
@@ -39,17 +39,26 @@ export function ImportPage({
   const [status, setStatus] = useState('');
   const [result, setResult] = useState('');
 
-  // CSV-specific state for the manual mapping step
+  // CSV-specific state for the manual mapping step (-1 = not used)
   const [pendingCsv, setPendingCsv] = useState<CsvTable | null>(null);
-  const [mapping, setMapping] = useState<ColumnMapping>({ date: 0, description: 1, amount: 2 });
+  const [mapCols, setMapCols] = useState({
+    date: 0,
+    description: 1,
+    amount: -1,
+    moneyIn: -1,
+    moneyOut: -1,
+    fee: -1,
+  });
 
   const toDrafts = (
-    rows: { tx_date: string; description: string; amount: number }[],
+    rows: { tx_date: string; description: string; amount: number; category?: string }[],
     forOwner: OwnerKey,
   ): DraftTx[] =>
     rows.map((r) => ({
-      ...r,
-      category: categorize(r.description),
+      tx_date: r.tx_date,
+      description: r.description,
+      amount: r.amount,
+      category: categorizeWithHint(r.description, r.category),
       owner_key: forOwner,
     }));
 
@@ -91,13 +100,41 @@ export function ImportPage({
         `Parsed ${ok.length} rows${skipped > 0 ? ` (${skipped} skipped)` : ''}.`,
       );
     } else {
+      // Seed the manual mapper with best-effort guesses so the user is
+      // mostly just confirming, not starting from scratch.
+      const find = (patterns: RegExp[]) =>
+        table.headers.findIndex((h) => patterns.some((p) => p.test(h.trim())));
+      setMapCols({
+        date: Math.max(find([/date/i, /datum/i]), 0),
+        description: Math.max(find([/desc/i, /beskrywing/i, /narrative/i]), 0),
+        amount: find([/^amount$/i, /^bedrag$/i]),
+        moneyIn: find([/money\s?in/i, /geld\s?in/i]),
+        moneyOut: find([/money\s?out/i, /geld\s?uit/i]),
+        fee: find([/^fee/i, /^fooi/i]),
+      });
       setPendingCsv(table);
       setStatus('Columns not recognised automatically — map them below.');
     }
   };
 
+  const mappingValid =
+    mapCols.date >= 0 &&
+    mapCols.description >= 0 &&
+    (mapCols.amount >= 0 || (mapCols.moneyIn >= 0 && mapCols.moneyOut >= 0));
+
+  const splitMode = mapCols.amount < 0;
+
   const applyManualMapping = async () => {
-    if (!pendingCsv) return;
+    if (!pendingCsv || !mappingValid) return;
+    const mapping: ColumnMapping = {
+      date: mapCols.date,
+      description: mapCols.description,
+      amount: mapCols.amount >= 0 ? mapCols.amount : null,
+      moneyIn: mapCols.moneyIn >= 0 ? mapCols.moneyIn : null,
+      moneyOut: mapCols.moneyOut >= 0 ? mapCols.moneyOut : null,
+      fee: mapCols.fee >= 0 ? mapCols.fee : null,
+      category: null,
+    };
     const { ok, skipped } = extractRows(pendingCsv, mapping);
     setPendingCsv(null);
     await startReview(
@@ -247,8 +284,9 @@ export function ImportPage({
             {source === 'csv' && (
               <>
                 <p className="notice">
-                  The recommended path for FNB: online banking → transaction history → export CSV,
-                  then upload it here. Columns are matched automatically.
+                  Anjoné (FNB): online banking → transaction history → export CSV. Rickus
+                  (Capitec): app or online banking → statements → export CSV. Columns are matched
+                  automatically where possible.
                 </p>
                 <input
                   type="file"
@@ -263,24 +301,78 @@ export function ImportPage({
                     <p style={{ fontSize: '0.8rem', marginBottom: 8 }}>
                       Match the columns ({pendingCsv.headers.join(' · ')}):
                     </p>
-                    {(['date', 'description', 'amount'] as const).map((field) => (
-                      <div key={field} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
-                        <span style={{ width: 90, fontSize: '0.8rem' }}>{field}</span>
-                        <select
-                          value={mapping[field]}
-                          onChange={(e) =>
-                            setMapping({ ...mapping, [field]: Number(e.target.value) })
+
+                    <ColSelect
+                      label="date"
+                      value={mapCols.date}
+                      headers={pendingCsv.headers}
+                      onChange={(v) => setMapCols({ ...mapCols, date: v })}
+                    />
+                    <ColSelect
+                      label="description"
+                      value={mapCols.description}
+                      headers={pendingCsv.headers}
+                      onChange={(v) => setMapCols({ ...mapCols, description: v })}
+                    />
+
+                    <div style={{ display: 'flex', gap: 12, margin: '10px 0', fontSize: '0.78rem' }}>
+                      <label style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                        <input
+                          type="radio"
+                          checked={!splitMode}
+                          onChange={() =>
+                            setMapCols({ ...mapCols, amount: 0, moneyIn: -1, moneyOut: -1, fee: -1 })
                           }
-                        >
-                          {pendingCsv.headers.map((h, i) => (
-                            <option key={i} value={i}>
-                              {h || `(column ${i + 1})`}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
-                    <button className="btn" style={{ marginTop: 6 }} onClick={() => void applyManualMapping()}>
+                        />
+                        One signed amount column
+                      </label>
+                      <label style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                        <input
+                          type="radio"
+                          checked={splitMode}
+                          onChange={() => setMapCols({ ...mapCols, amount: -1 })}
+                        />
+                        Separate money in / money out
+                      </label>
+                    </div>
+
+                    {!splitMode ? (
+                      <ColSelect
+                        label="amount"
+                        value={mapCols.amount}
+                        headers={pendingCsv.headers}
+                        onChange={(v) => setMapCols({ ...mapCols, amount: v })}
+                      />
+                    ) : (
+                      <>
+                        <ColSelect
+                          label="money in"
+                          value={mapCols.moneyIn}
+                          headers={pendingCsv.headers}
+                          onChange={(v) => setMapCols({ ...mapCols, moneyIn: v })}
+                        />
+                        <ColSelect
+                          label="money out"
+                          value={mapCols.moneyOut}
+                          headers={pendingCsv.headers}
+                          onChange={(v) => setMapCols({ ...mapCols, moneyOut: v })}
+                        />
+                        <ColSelect
+                          label="fee (optional)"
+                          value={mapCols.fee}
+                          headers={pendingCsv.headers}
+                          onChange={(v) => setMapCols({ ...mapCols, fee: v })}
+                          allowNone
+                        />
+                      </>
+                    )}
+
+                    <button
+                      className="btn"
+                      style={{ marginTop: 10 }}
+                      disabled={!mappingValid}
+                      onClick={() => void applyManualMapping()}
+                    >
                       Use this mapping
                     </button>
                   </div>
@@ -301,7 +393,7 @@ export function ImportPage({
                     onChange={(e) => setPdfProfile(e.target.value as StatementProfile)}
                   >
                     <option value="capitec">Capitec</option>
-                    <option value="fnb">FNB (best-effort — prefer CSV)</option>
+                    <option value="fnb">FNB</option>
                   </select>
                 </div>
                 <input
@@ -368,6 +460,34 @@ export function ImportPage({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ColSelect({
+  label,
+  value,
+  headers,
+  onChange,
+  allowNone,
+}: {
+  label: string;
+  value: number;
+  headers: string[];
+  onChange: (v: number) => void;
+  allowNone?: boolean;
+}) {
+  return (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+      <span style={{ width: 100, fontSize: '0.8rem' }}>{label}</span>
+      <select value={value} onChange={(e) => onChange(Number(e.target.value))}>
+        {allowNone && <option value={-1}>(none)</option>}
+        {headers.map((h, i) => (
+          <option key={i} value={i}>
+            {h || `(column ${i + 1})`}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

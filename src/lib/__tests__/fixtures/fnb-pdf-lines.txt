@@ -1,0 +1,14 @@
+Staat Periode : 17 April 2026 tot 16 Mei 2026
+Staatdatum : 16 Mei 2026
+Datum Beskrywing Bedrag Saldo
+18 Apr POS Aankope PNP Crp Douglasdale 405769*7926 16 Apr 1,500.91 856.06Kt
+21 Apr POS Aankope Sausage Saloon Corp 405769*7926 18 Apr 118.00 738.06Kt
+24 Apr Debiet Order Krediet Cashfocus Salaris / Salary 27,279.92Kt 27,978.01Kt
+24 Apr Magband Krediet Disc Memb 0008338705-289558667 1,014.30Kt 28,992.31Kt
+30 Apr 2.37 27,040.48Kt
+30 Apr DebiCheck Old Mutual0000Ecfe61 398.00 26,642.48Kt
+30 Apr Interne Debiet Order FNB H Loan 00003000020038539 7,979.81 18,250.27Kt
+02 Mei Gereeld Bet Na Kar Versekkering Anjo Versekkering 301.00 17,949.27Kt
+06 Mei Petrol Aankope Total Douglasdale C 405769*7926 04 May 619.70 10,267.98Kt
+16 Mei 120.00 6,438.32Kt
+Afsluitingsaldo 6,438.32Kt

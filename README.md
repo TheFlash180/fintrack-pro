@@ -8,10 +8,14 @@ hosting, Recharts dashboards. Installable on phone and desktop.
 
 ## What it does
 
-- **Import bank statements with no paid APIs.** Capitec PDFs parse client-side
-  with pdf.js (deterministic code — statements never leave the browser). FNB's
-  CSV export is the recommended path for Anjoné, with automatic column mapping
-  and a manual mapping step for unknown formats. A Paste tab (CSV or JSON)
+- **Import bank statements with no paid APIs.** Both banks export CSV
+  (recommended): FNB's single signed-amount column and Capitec's split
+  Money In / Money Out / Fee columns (plus Capitec's own category column,
+  used as a categorisation hint) are both auto-detected. PDF import runs
+  client-side with pdf.js (statements never leave the browser) for both
+  Capitec and FNB's Afrikaans statement layout — handles "Kt"/"Dt" suffixes,
+  year-less dates resolved from the statement period header, and strips the
+  card-reference noise FNB appends to descriptions. A Paste tab (CSV or JSON)
   covers anything else. Manual add/edit/delete always available.
 - **Review before saving.** Every import lands on an editable review table —
   fix dates/amounts/categories/owner, delete rows, add rows. Nothing writes to
@@ -72,13 +76,15 @@ Sample fixtures for the import paths are in
 [src/lib/\_\_tests\_\_/fixtures/](src/lib/__tests__/fixtures/) — an anonymised
 Capitec statement excerpt (as extracted text lines) and an FNB CSV.
 
-### A note on the Capitec parser
+### A note on the PDF parsers
 
-It's built against the standard Capitec statement layout and corrects missing
-minus signs using balance movement between rows. If a future statement layout
-changes and rows come out wrong, the review screen catches it (nothing saves
-unreviewed) and the Paste tab is the immediate workaround; fixing the profile
-is a small edit in [src/lib/statementParse.ts](src/lib/statementParse.ts).
+Both profiles are calibrated against real Capitec and FNB statements
+(including FNB's Afrikaans layout and its occasional rows where the PDF text
+layer drops the description entirely — those still parse with a placeholder
+description, editable on the review screen). If a future statement layout
+changes and rows come out wrong, review screen catches it (nothing saves
+unreviewed) and the Paste tab is the immediate workaround; fixing a profile is
+a small edit in [src/lib/statementParse.ts](src/lib/statementParse.ts).
 
 ## Out of scope for v1 (by design)
 
