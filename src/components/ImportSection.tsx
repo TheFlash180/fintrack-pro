@@ -9,7 +9,7 @@ import {
   type ColumnMapping,
   type CsvTable,
 } from '../lib/csv';
-import { deleteBatch, existsKey, findExistingHashes, hashDraft, insertDrafts } from '../lib/data';
+import { buildBatchHashes, deleteBatch, existsKey, findExistingHashes, insertDrafts } from '../lib/data';
 import { parseStatementLines } from '../lib/statementParse';
 import type { DraftTx, OwnerKey } from '../lib/types';
 import { ReviewTable } from './ReviewTable';
@@ -76,12 +76,11 @@ export function ImportSection({
     }
     setStatus(`${note} Checking for duplicates…`);
     const existing = await findExistingHashes(newDrafts);
-    const flagged = await Promise.all(
-      newDrafts.map(async (d) => ({
-        ...d,
-        duplicate: existing.has(existsKey(d.owner_key, await hashDraft(d))),
-      })),
-    );
+    const batchHashes = await buildBatchHashes(newDrafts);
+    const flagged = newDrafts.map((d, i) => ({
+      ...d,
+      duplicate: existing.has(existsKey(d.owner_key, batchHashes[i])),
+    }));
     const dupCount = flagged.filter((d) => d.duplicate).length;
     setStatus(
       `${note} ${flagged.length} row(s) ready to review` +

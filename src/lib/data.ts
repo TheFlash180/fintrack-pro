@@ -45,19 +45,33 @@ export async function hashDraft(d: DraftTx): Promise<string> {
   return dedupeHash(d.tx_date, d.amount, d.description);
 }
 
+/** Build the full set of hashes (with _N suffixes for same-hash rows) that
+ *  would be used during insert, so the duplicate check matches exactly. */
+export async function buildBatchHashes(drafts: DraftTx[]): Promise<string[]> {
+  const baseHashes = await Promise.all(drafts.map(hashDraft));
+  const counts = new Map<string, number>();
+  return baseHashes.map((h, i) => {
+    const key = `${drafts[i].owner_key}|${h}`;
+    const n = (counts.get(key) ?? 0) + 1;
+    counts.set(key, n);
+    return n === 1 ? h : `${h}_${n}`;
+  });
+}
+
 /** Which of these drafts already exist in the database (same owner + hash)? */
 export async function findExistingHashes(drafts: DraftTx[]): Promise<Set<string>> {
-  const hashes = await Promise.all(drafts.map(hashDraft));
+  const hashes = await buildBatchHashes(drafts);
   const existing = new Set<string>();
   const owners = [...new Set(drafts.map((d) => d.owner_key))];
   for (const owner of owners) {
     const ownerHashes = hashes.filter((_, i) => drafts[i].owner_key === owner);
     if (ownerHashes.length === 0) continue;
+    const unique = [...new Set(ownerHashes)];
     const { data } = await supabase
       .from('transactions')
       .select('dedupe_hash')
       .eq('owner_key', owner)
-      .in('dedupe_hash', ownerHashes);
+      .in('dedupe_hash', unique);
     for (const row of data ?? []) {
       if (row.dedupe_hash) existing.add(`${owner}|${row.dedupe_hash}`);
     }
@@ -91,12 +105,12 @@ export async function insertDrafts(
       created_by: userId,
     })),
   );
-  const seen = new Set<string>();
-  const rows = allRows.filter((r) => {
+  const counts = new Map<string, number>();
+  const rows = allRows.map((r) => {
     const key = `${r.owner_key}|${r.dedupe_hash}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
+    const n = (counts.get(key) ?? 0) + 1;
+    counts.set(key, n);
+    return n === 1 ? r : { ...r, dedupe_hash: `${r.dedupe_hash}_${n}` };
   });
   const { data, error } = await supabase
     .from('transactions')

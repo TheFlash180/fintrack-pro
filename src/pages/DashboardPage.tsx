@@ -107,7 +107,7 @@ export function DashboardPage({
       )}
 
       {dash !== 'trollip' && userId && (
-        <ImportSection owner={dash as OwnerKey} userId={userId} onImported={onChanged} />
+        <ImportSection key={dash} owner={dash as OwnerKey} userId={userId} onImported={onChanged} />
       )}
 
       <div className="card">
