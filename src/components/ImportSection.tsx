@@ -9,7 +9,7 @@ import {
   type ColumnMapping,
   type CsvTable,
 } from '../lib/csv';
-import { existsKey, findExistingHashes, hashDraft, insertDrafts } from '../lib/data';
+import { deleteBatch, existsKey, findExistingHashes, hashDraft, insertDrafts } from '../lib/data';
 import { parseStatementLines } from '../lib/statementParse';
 import type { DraftTx, OwnerKey } from '../lib/types';
 import { ReviewTable } from './ReviewTable';
@@ -56,6 +56,7 @@ export function ImportSection({
   });
 
   const [pasteText, setPasteText] = useState('');
+  const [lastImportIds, setLastImportIds] = useState<string[] | null>(null);
 
   const toDrafts = (
     rows: { tx_date: string; description: string; amount: number; category?: string }[],
@@ -223,21 +224,36 @@ export function ImportSection({
     if (!drafts) return;
     const toSave = drafts.filter((d) => !d.duplicate && d.description.trim() !== '' && d.amount !== 0);
     setBusy(true);
-    const { inserted, error } = await insertDrafts(toSave, source === 'manual' ? 'manual' : source, userId);
+    const { inserted, ids, error } = await insertDrafts(toSave, source === 'manual' ? 'manual' : source, userId);
     setBusy(false);
     if (error) {
       setStatus(`Save failed: ${error}`);
       return;
     }
     const skipped = drafts.length - toSave.length;
+    setLastImportIds(ids);
     setResult(
       `Imported ${inserted} transaction(s)` +
         (skipped > 0 ? `, skipped ${skipped} (duplicates or empty)` : '') +
-        '. They are live on the dashboard.',
+        '.',
     );
     setDrafts(null);
     setStatus('');
     setPasteText('');
+    onImported();
+  };
+
+  const undoImport = async () => {
+    if (!lastImportIds || lastImportIds.length === 0) return;
+    setBusy(true);
+    const { deleted, error } = await deleteBatch(lastImportIds);
+    setBusy(false);
+    if (error) {
+      setStatus(`Undo failed: ${error}`);
+      return;
+    }
+    setResult(`Undone — removed ${deleted} transaction(s).`);
+    setLastImportIds(null);
     onImported();
   };
 
@@ -248,6 +264,7 @@ export function ImportSection({
     setResult('');
     setPasteText('');
     setPendingCsv(null);
+    setLastImportIds(null);
     setSource(owner === 'rickus' ? 'csv' : 'pdf');
   };
 
@@ -278,7 +295,21 @@ export function ImportSection({
         )}
       </h3>
 
-      {result && <div className="notice" style={{ color: 'var(--accent)' }}>{result}</div>}
+      {result && (
+        <div className="notice" style={{ color: 'var(--accent)' }}>
+          {result}
+          {lastImportIds && lastImportIds.length > 0 && (
+            <button
+              className="btn btn-ghost"
+              style={{ marginLeft: 12, padding: '4px 12px', fontSize: '0.75rem' }}
+              disabled={busy}
+              onClick={() => void undoImport()}
+            >
+              {busy ? 'Undoing…' : 'Undo import'}
+            </button>
+          )}
+        </div>
+      )}
 
       {!drafts && (
         <>

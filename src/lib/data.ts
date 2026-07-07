@@ -69,14 +69,16 @@ export function existsKey(owner: string, hash: string): string {
   return `${owner}|${hash}`;
 }
 
-/** Insert reviewed drafts. Duplicates are skipped by the unique index; returns
- *  how many rows were actually written. */
+/** Insert reviewed drafts. Returns the IDs of inserted rows so they can be
+ *  undone as a batch. Duplicates should already be filtered out by the review
+ *  step; the partial unique index on (owner_key, dedupe_hash) acts as a
+ *  safety net at the DB level. */
 export async function insertDrafts(
   drafts: DraftTx[],
   source: string,
   userId: string,
-): Promise<{ inserted: number; error: string | null }> {
-  if (drafts.length === 0) return { inserted: 0, error: null };
+): Promise<{ inserted: number; ids: string[]; error: string | null }> {
+  if (drafts.length === 0) return { inserted: 0, ids: [], error: null };
   const rows = await Promise.all(
     drafts.map(async (d) => ({
       owner_key: d.owner_key,
@@ -91,10 +93,22 @@ export async function insertDrafts(
   );
   const { data, error } = await supabase
     .from('transactions')
-    .upsert(rows, { onConflict: 'owner_key,dedupe_hash', ignoreDuplicates: true })
+    .insert(rows)
     .select('id');
-  if (error) return { inserted: 0, error: error.message };
-  return { inserted: data?.length ?? 0, error: null };
+  if (error) return { inserted: 0, ids: [], error: error.message };
+  const ids = (data ?? []).map((r) => r.id as string);
+  return { inserted: ids.length, ids, error: null };
+}
+
+/** Delete a batch of transactions by their IDs (undo an import). */
+export async function deleteBatch(ids: string[]): Promise<{ deleted: number; error: string | null }> {
+  if (ids.length === 0) return { deleted: 0, error: null };
+  const { error, count } = await supabase
+    .from('transactions')
+    .delete({ count: 'exact' })
+    .in('id', ids);
+  if (error) return { deleted: 0, error: error.message };
+  return { deleted: count ?? ids.length, error: null };
 }
 
 export async function updateTx(
