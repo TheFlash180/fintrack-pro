@@ -86,7 +86,7 @@ export function budgetedCategories(budgets: Budget[], ym: string): string[] {
   return [...cats].sort();
 }
 
-const FIXED_CATEGORIES = new Set([
+const DEFAULT_FIXED = new Set([
   'Housing', 'Bond', 'Insurance', 'Phone & Internet', 'Subscriptions',
   'Domestic', 'Utilities', 'Credit Card', 'Bank Fees',
 ]);
@@ -97,17 +97,24 @@ export interface SpendSplit {
   total: number;
 }
 
-export function spendSplit(txs: Tx[]): SpendSplit {
+export function spendSplit(txs: Tx[], fixedCategories?: string[]): SpendSplit {
+  const fixedSet = fixedCategories ? new Set(fixedCategories) : DEFAULT_FIXED;
   let fixed = 0;
   let discretionary = 0;
   for (const t of txs) {
     if (t.amount >= 0) continue;
     const v = -t.amount;
     if (t.category === 'Savings & Investments') continue;
-    if (FIXED_CATEGORIES.has(t.category)) fixed += v;
+    if (fixedSet.has(t.category)) fixed += v;
     else discretionary += v;
   }
   return { fixed, discretionary, total: fixed + discretionary };
+}
+
+export function availableYears(txs: Tx[]): string[] {
+  const years = new Set<string>();
+  for (const t of txs) years.add(t.tx_date.slice(0, 4));
+  return [...years].sort();
 }
 
 export function savingsRate(t: Totals): number | null {
