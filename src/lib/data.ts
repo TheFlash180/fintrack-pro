@@ -79,7 +79,7 @@ export async function insertDrafts(
   userId: string,
 ): Promise<{ inserted: number; ids: string[]; error: string | null }> {
   if (drafts.length === 0) return { inserted: 0, ids: [], error: null };
-  const rows = await Promise.all(
+  const allRows = await Promise.all(
     drafts.map(async (d) => ({
       owner_key: d.owner_key,
       tx_date: d.tx_date,
@@ -91,6 +91,13 @@ export async function insertDrafts(
       created_by: userId,
     })),
   );
+  const seen = new Set<string>();
+  const rows = allRows.filter((r) => {
+    const key = `${r.owner_key}|${r.dedupe_hash}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
   const { data, error } = await supabase
     .from('transactions')
     .insert(rows)
