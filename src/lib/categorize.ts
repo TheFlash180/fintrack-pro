@@ -17,7 +17,7 @@ export const RULES: Rule[] = [
   // bond / home loan repayment
   { match: /bond|home loan|h loan|huislening/i, category: 'Bond' },
   // housing
-  { match: /rent\b|rental|levy|levies|body co/i, category: 'Housing' },
+  { match: /rent\b|rental|levy|levies|body co|inyati sands/i, category: 'Housing' },
   // utilities
   { match: /eskom|city of|municipal|prepaid elec|electricity|water and lights|rates\b/i, category: 'Utilities' },
   // phone & internet
@@ -30,22 +30,28 @@ export const RULES: Rule[] = [
   { match: /uber(?!\s?eats)|bolt\b|gautrain|toll|sanral|e-?toll|parking|tap n go/i, category: 'Transport' },
   // medical
   { match: /clicks|dis-?chem|pharmac|doctor|dr\s|hospital|pathcare|lancet|medirite|4d scan/i, category: 'Medical' },
-  // credit card repayments before the insurer names ("Discovery Credit Car")
-  { match: /credit car/i, category: 'Uncategorised' },
+  // credit card repayments
+  { match: /credit car/i, category: 'Credit Card' },
+  // domestic worker
+  { match: /georgina|maria domestic|domestic\b/i, category: 'Domestic' },
+  // holiday / travel
+  { match: /vakansie|holiday|booking\.com|welcomepickups|capago|iexchange|go city/i, category: 'Holiday' },
   // insurance (incl. Afrikaans "versekering" and local insurers)
   { match: /discovery|momentum|sanlam|old mutual|outsurance|santam|miway|king price|1life|liberty|versek|dotsure|naked ins|cap legacy|shackleton/i, category: 'Insurance' },
   // baby
   { match: /baby city|babies|toys r us|purity|pampers|huggies/i, category: 'Baby' },
   // clothing
   { match: /mr price|mrp\b|edgars|foschini|truworths|ackermans|pep\b|pepco|h&m|zara|cotton on/i, category: 'Clothing' },
-  // entertainment
-  { match: /ster-?kinekor|nu metro|computicket|ticketpro|steam|epic games/i, category: 'Entertainment' },
+  // entertainment (movies, gaming)
+  { match: /ster-?kinekor|nu metro|movies|computicket|ticketpro|steam|epic games/i, category: 'Entertainment' },
+  // hobbies (sport & active recreation)
+  { match: /playtomic|padel|karting/i, category: 'Hobbies' },
+  // personal care
+  { match: /barber|salon|haircut/i, category: 'Personal Care' },
   // shopping
   { match: /takealot|makro|game\b|builders|leroy|west pack|clicks baby|amazon|temu|shein/i, category: 'Shopping' },
   // groceries (butcheries)
   { match: /slaghuis|butcher/i, category: 'Groceries' },
-  // entertainment (padel etc.)
-  { match: /playtomic|padel/i, category: 'Entertainment' },
   // bank fees (incl. Afrikaans "diensfooi")
   { match: /fee\b|fees\b|monthly acc|admin charge|service charge|sms notif|diensfooi|maandelikse diens|fooi\b/i, category: 'Bank Fees' },
   // savings & investments (incl. Afrikaans "belegging"/"spaar")
@@ -65,12 +71,13 @@ const BANK_CATEGORY_MAP: Record<string, string> = {
   'home insurance': 'Insurance',
   'funeral cover': 'Insurance',
   internet: 'Phone & Internet',
+  telephone: 'Phone & Internet',
   salary: 'Salary',
   'digital subscriptions': 'Subscriptions',
   movies: 'Entertainment',
   'software/games': 'Entertainment',
-  'sport & hobbies': 'Entertainment',
-  holiday: 'Entertainment',
+  'sport & hobbies': 'Hobbies',
+  holiday: 'Holiday',
   'online store': 'Shopping',
   'books/stationery': 'Shopping',
   'clothing & shoes': 'Clothing',
@@ -79,6 +86,9 @@ const BANK_CATEGORY_MAP: Record<string, string> = {
   parking: 'Transport',
   tolls: 'Transport',
   'vehicle maintenance': 'Transport',
+  'personal care': 'Personal Care',
+  'credit card payments': 'Credit Card',
+  'cash withdrawal': 'Uncategorised',
   interest: 'Other Income',
   refunds: 'Other Income',
   'other income': 'Other Income',

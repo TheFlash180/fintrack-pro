@@ -85,3 +85,32 @@ export function budgetedCategories(budgets: Budget[], ym: string): string[] {
   }
   return [...cats].sort();
 }
+
+const FIXED_CATEGORIES = new Set([
+  'Housing', 'Bond', 'Insurance', 'Phone & Internet', 'Subscriptions',
+  'Domestic', 'Utilities', 'Credit Card', 'Bank Fees',
+]);
+
+export interface SpendSplit {
+  fixed: number;
+  discretionary: number;
+  total: number;
+}
+
+export function spendSplit(txs: Tx[]): SpendSplit {
+  let fixed = 0;
+  let discretionary = 0;
+  for (const t of txs) {
+    if (t.amount >= 0) continue;
+    const v = -t.amount;
+    if (t.category === 'Savings & Investments') continue;
+    if (FIXED_CATEGORIES.has(t.category)) fixed += v;
+    else discretionary += v;
+  }
+  return { fixed, discretionary, total: fixed + discretionary };
+}
+
+export function savingsRate(t: Totals): number | null {
+  if (t.income === 0) return null;
+  return ((t.income - t.expenses) / t.income) * 100;
+}

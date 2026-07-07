@@ -3,6 +3,7 @@ import {
   filterTxs,
   monthlySeries,
   spendByCategory,
+  spendSplit,
   totals,
 } from '../lib/aggregate';
 import { toYm } from '../lib/format';
@@ -15,6 +16,7 @@ import { MonthCompare } from '../components/MonthCompare';
 import { BudgetSection } from '../components/BudgetSection';
 import { TxList } from '../components/TxList';
 import { ImportSection } from '../components/ImportSection';
+import { SpendSplit } from '../components/SpendSplit';
 
 const DASH_META: Record<DashKey, { title: string; accent: string; sub: string }> = {
   rickus: { title: 'Rickus', accent: '#60a5fa', sub: 'his transactions' },
@@ -47,6 +49,7 @@ export function DashboardPage({
   );
   const ownerTxs = useMemo(() => filterTxs(txs, dash, null), [txs, dash]);
   const spend = useMemo(() => spendByCategory(periodTxs), [periodTxs]);
+  const split = useMemo(() => spendSplit(periodTxs), [periodTxs]);
   const series = useMemo(
     () => monthlySeries(ownerTxs, ym, dash === 'trollip' ? 12 : 6),
     [ownerTxs, ym, dash],
@@ -87,6 +90,11 @@ export function DashboardPage({
       <div className="card">
         <h3>Income vs expenses{dash === 'trollip' ? '' : ' · last 6 months'}</h3>
         <IncomeExpenseChart data={dash === 'trollip' ? series.slice(-6) : series} />
+      </div>
+
+      <div className="card">
+        <h3>Fixed vs discretionary{allTime ? ' · all time' : ''}</h3>
+        <SpendSplit split={split} />
       </div>
 
       <div className="card">

@@ -33,9 +33,22 @@ describe('categorize', () => {
     expect(categorize('Gereeld Bet Na Kar Versekkering Anjo Versekkering')).toBe('Insurance');
     expect(categorize('Eft Debit Order Cap Legacy400868397 Netcash')).toBe('Insurance');
     expect(categorize('Recurring Card Purchase: Netflix Amsterdam')).toBe('Subscriptions');
-    expect(categorize('Banking App External Payment: Discovery Credit Car')).toBe('Uncategorised');
+    expect(categorize('Banking App External Payment: Discovery Credit Car')).toBe('Credit Card');
     expect(categorize('#Maandelike Diens Fooi')).toBe('Bank Fees');
     expect(categorize('Betaaling Na Belegging Spaar')).toBe('Savings & Investments');
+  });
+
+  it('categorises new lifestyle categories', () => {
+    expect(categorize('Banking App External Payment: Inyati Sands Body Co')).toBe('Housing');
+    expect(categorize('Family Barber S 223560 Centurion')).toBe('Personal Care');
+    expect(categorize('Online Purchase: Playtomic Madrid')).toBe('Hobbies');
+    expect(categorize('Epic Karting Muldersdrift')).toBe('Hobbies');
+    expect(categorize('Banking App External Payment: Nita Vakansie')).toBe('Holiday');
+    expect(categorize('Online Purchase: Www.capago.eu Gif Sur Yvett')).toBe('Holiday');
+    expect(categorize('Banking App External Payment: Iexchange')).toBe('Holiday');
+    expect(categorize('Banking App Immediate Payment: Georgina')).toBe('Domestic');
+    expect(categorize('Banking App External Payment: Maria Domestic')).toBe('Domestic');
+    expect(categorize('Movies@monte Fourways')).toBe('Entertainment');
   });
 });
 
@@ -44,6 +57,13 @@ describe('categorizeWithHint', () => {
     expect(categorizeWithHint('PnP Crp Douglasdale', 'Groceries')).toBe('Groceries');
     expect(categorizeWithHint('Payment Received: Salary Salary 3125913287', 'Salary')).toBe('Salary');
     expect(categorizeWithHint('Debit Order Fee', 'Fees')).toBe('Bank Fees');
+  });
+
+  it('maps bank categories to new FinTrack categories', () => {
+    expect(categorizeWithHint('Playtomic Madrid', 'Sport & Hobbies')).toBe('Hobbies');
+    expect(categorizeWithHint('Booking.com Trip', 'Holiday')).toBe('Holiday');
+    expect(categorizeWithHint('Family Barber', 'Personal Care')).toBe('Personal Care');
+    expect(categorizeWithHint('Discovery Credit Car', 'Credit Card Payments')).toBe('Credit Card');
   });
 
   it('falls back to keyword rules when the bank category has no mapping', () => {
