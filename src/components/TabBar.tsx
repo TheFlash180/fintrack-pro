@@ -2,7 +2,6 @@ const TABS = [
   { hash: '#/rickus', label: 'Rickus', ico: '👤', accent: '#60a5fa' },
   { hash: '#/anjone', label: 'Anjoné', ico: '👤', accent: '#fbbf24' },
   { hash: '#/trollip', label: 'Trollip', ico: '🏠', accent: '#2dd4bf' },
-  { hash: '#/import', label: 'Import', ico: '📥', accent: '#2dd4bf' },
 ];
 
 export function TabBar({ route }: { route: string }) {
