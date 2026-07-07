@@ -98,6 +98,8 @@ export function FixedCategoryPicker({
   settings: DashSettings;
   onUpdate: (patch: Partial<DashSettings>) => void;
 }) {
+  const [open, setOpen] = useState(false);
+
   const toggle = (cat: string) => {
     const fixed = settings.fixedCategories.includes(cat)
       ? settings.fixedCategories.filter(c => c !== cat)
@@ -110,22 +112,52 @@ export function FixedCategoryPicker({
   );
 
   return (
-    <div className="fixed-picker">
-      <p style={{ fontSize: '0.78rem', color: 'var(--dim)', marginBottom: 10 }}>
-        Toggle which categories count as fixed expenses. Everything else is discretionary.
-      </p>
-      <div className="fixed-picker-grid">
-        {expenseCats.map(c => (
-          <label key={c} className="fixed-picker-item">
-            <input
-              type="checkbox"
-              checked={settings.fixedCategories.includes(c)}
-              onChange={() => toggle(c)}
-            />
-            <span>{c}</span>
-          </label>
-        ))}
-      </div>
-    </div>
+    <>
+      <button
+        className="btn btn-ghost"
+        style={{ marginTop: 12, padding: '5px 12px', fontSize: '0.72rem' }}
+        onClick={() => setOpen(true)}
+      >
+        Configure fixed categories
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(10,12,16,0.7)', zIndex: 60,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+          }}
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="card"
+            style={{ width: '100%', maxWidth: 420, margin: 0 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3>Fixed categories</h3>
+            <p style={{ fontSize: '0.78rem', color: 'var(--dim)', marginBottom: 12 }}>
+              Toggle which categories count as fixed expenses. Everything else is discretionary.
+            </p>
+            <div className="fixed-picker-grid">
+              {expenseCats.map(c => (
+                <label key={c} className="fixed-picker-item">
+                  <input
+                    type="checkbox"
+                    checked={settings.fixedCategories.includes(c)}
+                    onChange={() => toggle(c)}
+                  />
+                  <span>{c}</span>
+                </label>
+              ))}
+            </div>
+            <div style={{ textAlign: 'right', marginTop: 14 }}>
+              <button className="btn" style={{ padding: '7px 16px', fontSize: '0.8rem' }} onClick={() => setOpen(false)}>
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
