@@ -18,11 +18,11 @@ export interface StatementRow {
   balance: number | null;
 }
 
-// money token: 1,234.56 / 1 234.56 / -250.00 / 250.00- / (250.00) / 123.45Kt
-const MONEY = /-?\(?\d{1,3}(?:[ , ]\d{3})*\.\d{2}\)?(?:\s?(?:Cr|Dr|Kt|Dt))?-?/gi;
+// money token: 1,234.56 / -250.00 / 250.00- / (250.00) / 123.45Kt
+const MONEY = /-?\(?\d{1,3}(?:,\d{3})*\.\d{2}\)?(?:\s?(?:Cr|Dr|Kt|Dt))?-?/gi;
 
 function parseMoney(token: string): { value: number; credit: boolean | null } {
-  let t = token.replace(/[ , ]/g, '');
+  let t = token.replace(/[, ]/g, '');
   let credit: boolean | null = null;
   if (/(cr|kt)$/i.test(t)) {
     credit = true;

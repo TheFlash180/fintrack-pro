@@ -27,7 +27,7 @@ describe('categorize', () => {
     expect(categorize('PnP Crp Douglasdale')).toBe('Groceries');
     expect(categorize('Big Five Slaghuis Kenmare')).toBe('Groceries');
     expect(categorize('Sasol Lyttleton Manor')).toBe('Fuel');
-    expect(categorize('Interne Debiet Order FNB H Loan 00003000020038539')).toBe('Housing');
+    expect(categorize('Interne Debiet Order FNB H Loan 00003000020038539')).toBe('Bond');
     expect(categorize('Eft Debit Order Hm Connect')).toBe('Phone & Internet');
     expect(categorize('DebiCheck Old Mutual0000Ecfe61')).toBe('Insurance');
     expect(categorize('Gereeld Bet Na Kar Versekkering Anjo Versekkering')).toBe('Insurance');
