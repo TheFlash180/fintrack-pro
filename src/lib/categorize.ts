@@ -14,8 +14,10 @@ export const RULES: Rule[] = [
   { match: /checkers|shoprite|pick n pay|pnp|woolworths|woolies|spar\b|food lover|boxer|usave|ok foods/i, category: 'Groceries' },
   // fuel
   { match: /engen|sasol|shell|bp\b|total\s?energies|caltex|astron|fuel|petrol|garage/i, category: 'Fuel' },
+  // bond / home loan repayment
+  { match: /bond|home loan|h loan|huislening/i, category: 'Bond' },
   // housing
-  { match: /bond|home loan|h loan|huislening|rent\b|rental|levy|levies|body co/i, category: 'Housing' },
+  { match: /rent\b|rental|levy|levies|body co/i, category: 'Housing' },
   // utilities
   { match: /eskom|city of|municipal|prepaid elec|electricity|water and lights|rates\b/i, category: 'Utilities' },
   // phone & internet

@@ -33,6 +33,7 @@ export const CATEGORIES = [
   'Groceries',
   'Fuel',
   'Housing',
+  'Bond',
   'Utilities',
   'Phone & Internet',
   'Subscriptions',
