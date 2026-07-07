@@ -6,7 +6,7 @@ import {
   totals,
 } from '../lib/aggregate';
 import { toYm } from '../lib/format';
-import type { Budget, DashKey, Tx } from '../lib/types';
+import type { Budget, DashKey, OwnerKey, Tx } from '../lib/types';
 import { MonthPicker } from '../components/MonthPicker';
 import { StatTiles } from '../components/StatTiles';
 import { CategoryList } from '../components/CategoryList';
@@ -14,6 +14,7 @@ import { IncomeExpenseChart } from '../components/IncomeExpenseChart';
 import { MonthCompare } from '../components/MonthCompare';
 import { BudgetSection } from '../components/BudgetSection';
 import { TxList } from '../components/TxList';
+import { ImportSection } from '../components/ImportSection';
 
 const DASH_META: Record<DashKey, { title: string; accent: string; sub: string }> = {
   rickus: { title: 'Rickus', accent: '#60a5fa', sub: 'his transactions' },
@@ -27,12 +28,14 @@ export function DashboardPage({
   budgets,
   loading,
   onChanged,
+  userId,
 }: {
   dash: DashKey;
   txs: Tx[];
   budgets: Budget[];
   loading: boolean;
   onChanged: () => void;
+  userId: string | null;
 }) {
   const [ym, setYm] = useState(toYm(new Date()));
   const [allTime, setAllTime] = useState(false);
@@ -101,6 +104,10 @@ export function DashboardPage({
             onSaved={onChanged}
           />
         </div>
+      )}
+
+      {dash !== 'trollip' && userId && (
+        <ImportSection owner={dash as OwnerKey} userId={userId} onImported={onChanged} />
       )}
 
       <div className="card">
