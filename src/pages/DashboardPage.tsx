@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  availableYears,
   filterTxs,
   monthlySeries,
   spendByCategory,
@@ -7,6 +8,7 @@ import {
   totals,
 } from '../lib/aggregate';
 import { toYm } from '../lib/format';
+import { useSettings } from '../lib/settings';
 import type { Budget, DashKey, OwnerKey, Tx } from '../lib/types';
 import { MonthPicker } from '../components/MonthPicker';
 import { StatTiles } from '../components/StatTiles';
@@ -17,6 +19,8 @@ import { BudgetSection } from '../components/BudgetSection';
 import { TxList } from '../components/TxList';
 import { ImportSection } from '../components/ImportSection';
 import { SpendSplit } from '../components/SpendSplit';
+import { Collapsible } from '../components/Collapsible';
+import { CategoryManager, FixedCategoryPicker } from '../components/CategoryManager';
 
 const DASH_META: Record<DashKey, { title: string; accent: string; sub: string }> = {
   rickus: { title: 'Rickus', accent: '#60a5fa', sub: 'his transactions' },
@@ -41,15 +45,26 @@ export function DashboardPage({
 }) {
   const [ym, setYm] = useState(toYm(new Date()));
   const [allTime, setAllTime] = useState(false);
+  const [yearFilter, setYearFilter] = useState<string | null>(null);
+  const { settings, update: updateSettings } = useSettings(dash);
   const meta = DASH_META[dash];
 
-  const periodTxs = useMemo(
-    () => filterTxs(txs, dash, allTime ? null : ym),
-    [txs, dash, ym, allTime],
-  );
   const ownerTxs = useMemo(() => filterTxs(txs, dash, null), [txs, dash]);
+  const years = useMemo(() => availableYears(ownerTxs), [ownerTxs]);
+
+  const periodTxs = useMemo(() => {
+    let filtered = filterTxs(txs, dash, allTime ? null : ym);
+    if (yearFilter && allTime) {
+      filtered = filtered.filter(t => t.tx_date.startsWith(yearFilter));
+    }
+    return filtered;
+  }, [txs, dash, ym, allTime, yearFilter]);
+
   const spend = useMemo(() => spendByCategory(periodTxs), [periodTxs]);
-  const split = useMemo(() => spendSplit(periodTxs), [periodTxs]);
+  const split = useMemo(
+    () => spendSplit(periodTxs, settings.fixedCategories),
+    [periodTxs, settings.fixedCategories],
+  );
   const series = useMemo(
     () => monthlySeries(ownerTxs, ym, dash === 'trollip' ? 12 : 6),
     [ownerTxs, ym, dash],
@@ -81,8 +96,11 @@ export function DashboardPage({
       <MonthPicker
         ym={ym}
         allTime={allTime}
+        years={years}
+        yearFilter={yearFilter}
         onChange={setYm}
-        onToggleAll={() => setAllTime(!allTime)}
+        onToggleAll={() => { setAllTime(!allTime); setYearFilter(null); }}
+        onYearFilter={setYearFilter}
       />
 
       <StatTiles totals={totals(periodTxs)} />
@@ -92,15 +110,14 @@ export function DashboardPage({
         <IncomeExpenseChart data={dash === 'trollip' ? series.slice(-6) : series} />
       </div>
 
-      <div className="card">
-        <h3>Fixed vs discretionary{allTime ? ' · all time' : ''}</h3>
+      <Collapsible title={`Fixed vs discretionary${allTime ? ' · all time' : ''}`} defaultOpen>
         <SpendSplit split={split} />
-      </div>
+        <FixedCategoryPicker settings={settings} onUpdate={updateSettings} />
+      </Collapsible>
 
-      <div className="card">
-        <h3>Spend by category{allTime ? ' · all time' : ''}</h3>
+      <Collapsible title={`Spend by category${allTime ? ' · all time' : ''}`}>
         <CategoryList spend={spend} />
-      </div>
+      </Collapsible>
 
       {dash === 'trollip' && (
         <div className="card">
@@ -118,10 +135,14 @@ export function DashboardPage({
         <ImportSection key={dash} owner={dash as OwnerKey} userId={userId} onImported={onChanged} />
       )}
 
-      <div className="card">
-        <h3>Recent transactions</h3>
-        <TxList txs={periodTxs.slice(0, 25)} showOwner={dash === 'trollip'} onChanged={onChanged} />
-      </div>
+      <Collapsible title="Recent transactions">
+        <TxList
+          txs={periodTxs.slice(0, 50)}
+          showOwner={dash === 'trollip'}
+          onChanged={onChanged}
+          categories={settings.categories}
+        />
+      </Collapsible>
 
       {dash === 'trollip' && (
         <div className="card">
@@ -129,6 +150,10 @@ export function DashboardPage({
           <MonthCompare series={series} />
         </div>
       )}
+
+      <Collapsible title="Manage categories">
+        <CategoryManager settings={settings} onUpdate={updateSettings} />
+      </Collapsible>
     </div>
   );
 }

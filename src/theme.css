@@ -202,6 +202,55 @@ textarea { width: 100%; min-height: 120px; font-family: var(--font-mono); font-s
 .split-val { font-family: var(--font-mono); font-size: 0.82rem; margin-left: auto; }
 .split-pct { color: var(--dim); font-size: 0.75rem; min-width: 32px; text-align: right; }
 
+/* ---------- collapsible ---------- */
+
+.collapsible-head {
+  cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px;
+  margin-bottom: 0 !important;
+}
+.collapsible-head .chevron {
+  display: inline-block; font-size: 1.1rem; transition: transform 0.15s;
+  transform: rotate(0deg); line-height: 1; width: 12px;
+}
+.collapsible-head .chevron.open { transform: rotate(90deg); }
+.card:has(.collapsible-head .chevron.open) .collapsible-head { margin-bottom: 12px !important; }
+
+/* ---------- year filter ---------- */
+
+.month-picker-wrap { margin-bottom: 14px; }
+.year-filter { display: flex; justify-content: center; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+.year-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--dim); border-radius: 999px;
+  padding: 4px 12px; font-family: var(--font-body); font-weight: 600; font-size: 0.72rem; cursor: pointer;
+}
+.year-btn.active { border-color: var(--dash-accent); color: var(--dash-accent); }
+
+/* ---------- category manager ---------- */
+
+.cat-mgr-row {
+  display: flex; align-items: center; justify-content: space-between; padding: 5px 0;
+  border-bottom: 1px dashed var(--border); font-size: 0.82rem;
+}
+.cat-mgr-row:last-child { border-bottom: none; }
+.cat-mgr-name { font-weight: 500; }
+.cat-mgr-actions { display: flex; gap: 2px; }
+.cat-mgr-actions button {
+  background: none; border: none; color: var(--dim); cursor: pointer; font-size: 0.85rem;
+  padding: 2px 6px; line-height: 1;
+}
+.cat-mgr-actions button:hover { color: var(--text); }
+
+/* ---------- fixed category picker ---------- */
+
+.fixed-picker-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 12px; }
+@media (min-width: 520px) { .fixed-picker-grid { grid-template-columns: repeat(3, 1fr); } }
+.fixed-picker-item {
+  display: flex; align-items: center; gap: 6px; font-size: 0.78rem; padding: 3px 0; cursor: pointer;
+}
+.fixed-picker-item input[type="checkbox"] {
+  width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer;
+}
+
 /* ---------- states ---------- */
 
 .empty-state { text-align: center; color: var(--dim); padding: 34px 16px; font-size: 0.88rem; }

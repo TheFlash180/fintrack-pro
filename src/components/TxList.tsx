@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { deleteTx, updateTx } from '../lib/data';
 import { fmtZar } from '../lib/format';
 import { CATEGORIES, OWNER_LABEL, type Tx } from '../lib/types';
@@ -7,12 +7,22 @@ export function TxList({
   txs,
   showOwner,
   onChanged,
+  categories,
 }: {
   txs: Tx[];
   showOwner: boolean;
   onChanged: () => void;
+  categories?: string[];
 }) {
   const [editing, setEditing] = useState<Tx | null>(null);
+  const [catFilter, setCatFilter] = useState('');
+
+  const filtered = useMemo(
+    () => catFilter ? txs.filter(t => t.category === catFilter) : txs,
+    [txs, catFilter],
+  );
+
+  const catOptions = categories ?? (CATEGORIES as unknown as string[]);
 
   if (txs.length === 0) {
     return <div className="empty-state">No transactions here yet.</div>;
@@ -20,7 +30,22 @@ export function TxList({
 
   return (
     <div>
-      {txs.map((t) => (
+      <div style={{ marginBottom: 10 }}>
+        <select
+          value={catFilter}
+          onChange={e => setCatFilter(e.target.value)}
+          style={{ fontSize: '0.78rem', padding: '5px 8px' }}
+        >
+          <option value="">All categories ({txs.length})</option>
+          {catOptions.map(c => {
+            const count = txs.filter(t => t.category === c).length;
+            if (count === 0) return null;
+            return <option key={c} value={c}>{c} ({count})</option>;
+          })}
+        </select>
+      </div>
+
+      {filtered.map((t) => (
         <div className="tx-row" key={t.id}>
           <div className="tx-main">
             <div className="tx-desc">{t.description || '(no description)'}</div>
@@ -34,14 +59,19 @@ export function TxList({
             {fmtZar(t.amount)}
           </span>
           <span className="tx-actions">
-            <button onClick={() => setEditing(t)} title="Edit">✎</button>
+            <button onClick={() => setEditing(t)} title="Edit">&#x270E;</button>
           </span>
         </div>
       ))}
 
+      {catFilter && filtered.length === 0 && (
+        <div className="empty-state">No transactions in "{catFilter}" for this period.</div>
+      )}
+
       {editing && (
         <EditModal
           tx={editing}
+          categories={catOptions}
           onClose={() => setEditing(null)}
           onChanged={() => {
             setEditing(null);
@@ -55,10 +85,12 @@ export function TxList({
 
 function EditModal({
   tx,
+  categories,
   onClose,
   onChanged,
 }: {
   tx: Tx;
+  categories: string[];
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -116,9 +148,10 @@ function EditModal({
             className="mono"
           />
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <option key={c}>{c}</option>
             ))}
+            {!categories.includes(category) && <option key={category}>{category}</option>}
           </select>
           <select value={owner} onChange={(e) => setOwner(e.target.value as typeof owner)}>
             <option value="rickus">Rickus</option>
