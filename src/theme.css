@@ -71,17 +71,62 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 
 /* ---------- month picker ---------- */
 
-.month-picker { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
+.month-picker-wrap { position: relative; margin-bottom: 14px; }
+
+.mode-tabs { display: flex; justify-content: center; gap: 4px; margin-bottom: 10px; }
+.mode-tabs button {
+  background: transparent; border: 1px solid var(--border); color: var(--dim); border-radius: 999px;
+  padding: 6px 16px; font-family: var(--font-body); font-weight: 600; font-size: 0.78rem; cursor: pointer;
+}
+.mode-tabs button.active { border-color: var(--dash-accent); color: var(--dash-accent); }
+
+.month-picker { display: flex; align-items: center; justify-content: center; gap: 10px; }
 .month-picker button {
   background: var(--surface); border: 1px solid var(--border); color: var(--text);
   border-radius: 10px; padding: 7px 13px; cursor: pointer; font-family: var(--font-body);
   font-weight: 600; font-size: 0.9rem;
 }
 .month-picker button:disabled { opacity: 0.35; cursor: default; }
-.month-picker .label { font-family: var(--font-display); font-size: 0.95rem; min-width: 150px;
-  text-align: center; }
-.month-picker .all-toggle { font-size: 0.75rem; padding: 6px 10px; }
-.month-picker .all-toggle.on { border-color: var(--dash-accent); color: var(--dash-accent); }
+.month-picker .picker-trigger {
+  font-family: var(--font-display); font-size: 0.95rem; min-width: 150px;
+  text-align: center; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 7px 16px; cursor: pointer; color: var(--text);
+}
+
+/* ---------- date picker dropdown ---------- */
+
+.date-picker-dropdown {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px; z-index: 50; min-width: 260px; margin-top: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.dp-year-row {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.dp-year-row button {
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 4px 12px; cursor: pointer; font-size: 1rem; font-weight: 600;
+}
+.dp-year-row button:disabled { opacity: 0.35; cursor: default; }
+.dp-year-label { font-family: var(--font-display); font-size: 1rem; font-weight: 600; }
+.dp-month-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+}
+.dp-month-grid button, .dp-year-grid button {
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 8px 4px; cursor: pointer; font-family: var(--font-body);
+  font-size: 0.78rem; font-weight: 500;
+}
+.dp-month-grid button:disabled { opacity: 0.3; cursor: default; }
+.dp-month-grid button.active, .dp-year-grid button.active {
+  border-color: var(--dash-accent); color: var(--dash-accent); background: rgba(45,212,191,0.1);
+}
+.dp-month-grid button:not(:disabled):not(.active):hover,
+.dp-year-grid button:not(.active):hover { border-color: var(--text); }
+.dp-year-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+}
 
 /* ---------- category ranked list ---------- */
 
@@ -89,6 +134,9 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .cat-row .name { font-size: 0.85rem; font-weight: 600; }
 .cat-row .amt { font-family: var(--font-mono); font-size: 0.82rem; text-align: right; }
 .cat-row .pct { color: var(--dim); font-size: 0.72rem; margin-left: 6px; }
+.cat-delta { font-size: 0.68rem; margin-left: 6px; font-weight: 600; }
+.cat-delta.delta-up { color: var(--neg); }
+.cat-delta.delta-down { color: var(--accent); }
 .cat-bar-track { grid-column: 1 / -1; height: 6px; border-radius: 4px; background: var(--surface-2); }
 .cat-bar { height: 100%; border-radius: 4px; background: var(--dash-accent); min-width: 2px; }
 
@@ -115,6 +163,14 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .budget-fill { height: 100%; border-radius: 4px; background: var(--accent); }
 .budget-fill.over { background: var(--neg); }
 .budget-over-label { color: var(--neg); font-weight: 700; }
+.budget-right { display: flex; align-items: center; gap: 6px; }
+.budget-actions { display: flex; gap: 2px; }
+.budget-actions button {
+  background: none; border: none; color: var(--dim); cursor: pointer; font-size: 0.85rem;
+  padding: 2px 6px; line-height: 1;
+}
+.budget-actions button:hover { color: var(--text); }
+.budget-inline-edit { display: flex; align-items: center; gap: 6px; }
 .budget-edit { display: flex; gap: 8px; margin-top: 10px; }
 .budget-edit select, .budget-edit input { flex: 1; }
 
@@ -215,15 +271,7 @@ textarea { width: 100%; min-height: 120px; font-family: var(--font-mono); font-s
 .collapsible-head .chevron.open { transform: rotate(90deg); }
 .card:has(.collapsible-head .chevron.open) .collapsible-head { margin-bottom: 12px !important; }
 
-/* ---------- year filter ---------- */
-
-.month-picker-wrap { margin-bottom: 14px; }
-.year-filter { display: flex; justify-content: center; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
-.year-btn {
-  background: transparent; border: 1px solid var(--border); color: var(--dim); border-radius: 999px;
-  padding: 4px 12px; font-family: var(--font-body); font-weight: 600; font-size: 0.72rem; cursor: pointer;
-}
-.year-btn.active { border-color: var(--dash-accent); color: var(--dash-accent); }
+/* ---------- year filter (legacy, kept for reference) ---------- */
 
 /* ---------- category manager ---------- */
 

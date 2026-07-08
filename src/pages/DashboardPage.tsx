@@ -7,7 +7,7 @@ import {
   spendSplit,
   totals,
 } from '../lib/aggregate';
-import { toYm } from '../lib/format';
+import { shiftYm, toYm } from '../lib/format';
 import { useSettings } from '../lib/settings';
 import type { Budget, DashKey, OwnerKey, Tx } from '../lib/types';
 import { MonthPicker } from '../components/MonthPicker';
@@ -61,6 +61,14 @@ export function DashboardPage({
   }, [txs, dash, ym, allTime, yearFilter]);
 
   const spend = useMemo(() => spendByCategory(periodTxs), [periodTxs]);
+
+  const prevSpend = useMemo(() => {
+    if (allTime) return undefined;
+    const prevYm = shiftYm(ym, -1);
+    const prevTxs = filterTxs(txs, dash, prevYm);
+    return spendByCategory(prevTxs);
+  }, [txs, dash, ym, allTime]);
+
   const split = useMemo(
     () => spendSplit(periodTxs, settings.fixedCategories),
     [periodTxs, settings.fixedCategories],
@@ -116,7 +124,7 @@ export function DashboardPage({
       </Collapsible>
 
       <Collapsible title={`Spend by category${allTime ? ' · all time' : ''}`}>
-        <CategoryList spend={spend} />
+        <CategoryList spend={spend} prevSpend={prevSpend} />
       </Collapsible>
 
       {dash === 'trollip' && (

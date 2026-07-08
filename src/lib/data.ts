@@ -159,3 +159,15 @@ export async function saveBudget(
     );
   return !error;
 }
+
+export async function deleteBudget(
+  category: string,
+  ym: string,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('budgets')
+    .delete()
+    .eq('category', category)
+    .eq('effective_from', `${ym}-01`);
+  return !error;
+}
