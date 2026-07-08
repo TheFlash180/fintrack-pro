@@ -4,10 +4,13 @@ import { CATEGORIES, type DraftTx, type OwnerKey } from '../lib/types';
 export function ReviewTable({
   drafts,
   onChange,
+  categories,
 }: {
   drafts: DraftTx[];
   onChange: (next: DraftTx[]) => void;
+  categories?: string[];
 }) {
+  const catOptions = categories ?? (CATEGORIES as unknown as string[]);
   const [catFilter, setCatFilter] = useState('');
 
   const catCounts = useMemo(() => {
@@ -100,9 +103,12 @@ export function ReviewTable({
                       value={d.category}
                       onChange={(e) => update(i, { category: e.target.value })}
                     >
-                      {CATEGORIES.map((c) => (
+                      {catOptions.map((c) => (
                         <option key={c}>{c}</option>
                       ))}
+                      {!catOptions.includes(d.category) && (
+                        <option key={d.category}>{d.category}</option>
+                      )}
                     </select>
                   </td>
                   <td>

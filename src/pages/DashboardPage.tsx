@@ -131,10 +131,6 @@ export function DashboardPage({
         </div>
       )}
 
-      {dash !== 'trollip' && userId && (
-        <ImportSection key={dash} owner={dash as OwnerKey} userId={userId} onImported={onChanged} />
-      )}
-
       <Collapsible title="Recent transactions">
         <TxList
           txs={periodTxs.slice(0, 50)}
@@ -154,6 +150,10 @@ export function DashboardPage({
       <Collapsible title="Manage categories">
         <CategoryManager settings={settings} onUpdate={updateSettings} />
       </Collapsible>
+
+      {dash !== 'trollip' && userId && (
+        <ImportSection key={dash} owner={dash as OwnerKey} userId={userId} onImported={onChanged} categories={settings.categories} />
+      )}
     </div>
   );
 }

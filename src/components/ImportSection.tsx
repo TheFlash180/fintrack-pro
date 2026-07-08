@@ -33,10 +33,12 @@ export function ImportSection({
   owner,
   userId,
   onImported,
+  categories,
 }: {
   owner: OwnerKey;
   userId: string;
   onImported: () => void;
+  categories?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [source, setSource] = useState<string>(owner === 'rickus' ? 'csv' : 'pdf');
@@ -479,7 +481,7 @@ export function ImportSection({
             Review before saving — nothing is stored yet
           </p>
           {status && <p style={{ fontSize: '0.8rem', color: 'var(--dim)', marginBottom: 10 }}>{status}</p>}
-          <ReviewTable drafts={drafts} onChange={setDrafts} />
+          <ReviewTable drafts={drafts} onChange={setDrafts} categories={categories} />
           <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
             <button className="btn btn-ghost" onClick={() => { setDrafts(null); setStatus(''); }}>
               Discard
