@@ -109,7 +109,7 @@ function EditModal({
       amount: Number(amount),
       category,
       owner_key: owner,
-    });
+    }, { tx_date: tx.tx_date, description: tx.description ?? '', amount: tx.amount });
     setBusy(false);
     if (ok) onChanged();
   };

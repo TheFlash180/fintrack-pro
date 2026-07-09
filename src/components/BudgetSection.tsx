@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { budgetFor, budgetedCategories, type CategorySpend } from '../lib/aggregate';
-import { deleteBudget, saveBudget } from '../lib/data';
+import { deleteAllBudgetsForCategory, saveBudget } from '../lib/data';
 import { fmtZar } from '../lib/format';
 import { CATEGORIES, type Budget } from '../lib/types';
 
@@ -49,8 +49,9 @@ export function BudgetSection({
   };
 
   const removeBudget = async (cat: string) => {
+    if (!window.confirm(`Remove the budget for "${cat}"? This removes all historical budget entries for this category.`)) return;
     setSaving(true);
-    const ok = await deleteBudget(cat, ym);
+    const ok = await deleteAllBudgetsForCategory(cat);
     setSaving(false);
     if (ok) onSaved();
   };
