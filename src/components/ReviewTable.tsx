@@ -26,7 +26,8 @@ export function ReviewTable({
 
   const update = (i: number, patch: Partial<DraftTx>) => {
     const next = drafts.slice();
-    next[i] = { ...next[i], ...patch, duplicate: false };
+    const hashFieldChanged = 'tx_date' in patch || 'amount' in patch || 'description' in patch;
+    next[i] = { ...next[i], ...patch, duplicate: hashFieldChanged ? false : next[i].duplicate };
     onChange(next);
   };
 

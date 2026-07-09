@@ -1,17 +1,21 @@
 import { useState } from 'react';
+import { renameCategory as renameCategoryInDb } from '../lib/data';
 import type { DashSettings } from '../lib/settings';
 
 export function CategoryManager({
   settings,
   onUpdate,
+  onChanged,
 }: {
   settings: DashSettings;
   onUpdate: (patch: Partial<DashSettings>) => void;
+  onChanged?: () => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
+  const [renaming, setRenaming] = useState(false);
 
   const cats = settings.categories;
 
@@ -23,11 +27,17 @@ export function CategoryManager({
     setAdding(false);
   };
 
-  const renameCategory = (idx: number) => {
+  const handleRename = async (idx: number) => {
     const name = editName.trim();
     if (!name || (name !== cats[idx] && cats.includes(name))) return;
+    const oldName = cats[idx];
+    if (name !== oldName) {
+      setRenaming(true);
+      await renameCategoryInDb(oldName, name);
+      setRenaming(false);
+      onChanged?.();
+    }
     const next = [...cats];
-    const oldName = next[idx];
     next[idx] = name;
     const fixedNext = settings.fixedCategories.map(c => c === oldName ? name : c);
     onUpdate({ categories: next, fixedCategories: fixedNext });
@@ -52,11 +62,11 @@ export function CategoryManager({
                 <input
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') renameCategory(i); }}
+                  onKeyDown={e => { if (e.key === 'Enter') void handleRename(i); }}
                   style={{ flex: 1, padding: '5px 8px', fontSize: '0.8rem' }}
                   autoFocus
                 />
-                <button className="btn" style={{ padding: '5px 10px', fontSize: '0.75rem' }} onClick={() => renameCategory(i)}>Save</button>
+                <button className="btn" style={{ padding: '5px 10px', fontSize: '0.75rem' }} disabled={renaming} onClick={() => void handleRename(i)}>{renaming ? 'Saving…' : 'Save'}</button>
                 <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: '0.75rem' }} onClick={() => setEditIdx(null)}>Cancel</button>
               </div>
             ) : (

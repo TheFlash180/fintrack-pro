@@ -135,8 +135,16 @@ export async function deleteBatch(ids: string[]): Promise<{ deleted: number; err
 export async function updateTx(
   id: string,
   patch: Partial<Pick<Tx, 'tx_date' | 'description' | 'amount' | 'category' | 'owner_key'>>,
+  fullTx?: Pick<Tx, 'tx_date' | 'description' | 'amount'>,
 ): Promise<boolean> {
-  const { error } = await supabase.from('transactions').update(patch).eq('id', id);
+  const updates: Record<string, unknown> = { ...patch };
+  if (fullTx && ('tx_date' in patch || 'amount' in patch || 'description' in patch)) {
+    const date = patch.tx_date ?? fullTx.tx_date;
+    const amount = patch.amount ?? fullTx.amount;
+    const desc = patch.description ?? fullTx.description ?? '';
+    updates.dedupe_hash = await dedupeHash(date, amount, desc);
+  }
+  const { error } = await supabase.from('transactions').update(updates).eq('id', id);
   return !error;
 }
 
@@ -160,6 +168,17 @@ export async function saveBudget(
   return !error;
 }
 
+export async function renameCategory(
+  oldName: string,
+  newName: string,
+): Promise<boolean> {
+  const [txRes, budgetRes] = await Promise.all([
+    supabase.from('transactions').update({ category: newName }).eq('category', oldName),
+    supabase.from('budgets').update({ category: newName }).eq('category', oldName),
+  ]);
+  return !txRes.error && !budgetRes.error;
+}
+
 export async function deleteBudget(
   category: string,
   ym: string,
@@ -169,5 +188,15 @@ export async function deleteBudget(
     .delete()
     .eq('category', category)
     .eq('effective_from', `${ym}-01`);
+  return !error;
+}
+
+export async function deleteAllBudgetsForCategory(
+  category: string,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('budgets')
+    .delete()
+    .eq('category', category);
   return !error;
 }

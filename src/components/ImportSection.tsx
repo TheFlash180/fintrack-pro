@@ -488,7 +488,7 @@ export function ImportSection({
             </button>
             <div style={{ flex: 1 }} />
             <button className="btn" disabled={busy || drafts.length === 0} onClick={() => void confirm()}>
-              {busy ? 'Saving…' : `Confirm import (${drafts.filter((d) => !d.duplicate).length})`}
+              {busy ? 'Saving…' : `Confirm import (${drafts.filter((d) => !d.duplicate && d.description.trim() !== '' && d.amount !== 0).length})`}
             </button>
           </div>
         </>

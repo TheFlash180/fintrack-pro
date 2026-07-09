@@ -156,7 +156,7 @@ export function DashboardPage({
       )}
 
       <Collapsible title="Manage categories">
-        <CategoryManager settings={settings} onUpdate={updateSettings} />
+        <CategoryManager settings={settings} onUpdate={updateSettings} onChanged={onChanged} />
       </Collapsible>
 
       {dash !== 'trollip' && userId && (
