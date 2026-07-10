@@ -86,32 +86,35 @@ export function existsKey(owner: string, hash: string): string {
 /** Insert reviewed drafts. Returns the IDs of inserted rows so they can be
  *  undone as a batch. Duplicates should already be filtered out by the review
  *  step; the partial unique index on (owner_key, dedupe_hash) acts as a
- *  safety net at the DB level. */
+ *  safety net at the DB level.
+ *
+ *  `precomputedHashes` must be aligned with `drafts` and come from
+ *  buildBatchHashes over the FULL review list, so the _N suffixes match what
+ *  the duplicate check saw. Recomputing them here over a filtered subset
+ *  would drop a suffix and collide with an already-imported twin row. */
 export async function insertDrafts(
   drafts: DraftTx[],
   source: string,
   userId: string,
+  precomputedHashes?: string[],
 ): Promise<{ inserted: number; ids: string[]; error: string | null }> {
   if (drafts.length === 0) return { inserted: 0, ids: [], error: null };
-  const allRows = await Promise.all(
-    drafts.map(async (d) => ({
-      owner_key: d.owner_key,
-      tx_date: d.tx_date,
-      description: d.description,
-      amount: d.amount,
-      category: d.category,
-      source,
-      dedupe_hash: await hashDraft(d),
-      created_by: userId,
-    })),
-  );
-  const counts = new Map<string, number>();
-  const rows = allRows.map((r) => {
-    const key = `${r.owner_key}|${r.dedupe_hash}`;
-    const n = (counts.get(key) ?? 0) + 1;
-    counts.set(key, n);
-    return n === 1 ? r : { ...r, dedupe_hash: `${r.dedupe_hash}_${n}` };
-  });
+  let hashes: string[];
+  if (precomputedHashes && precomputedHashes.length === drafts.length) {
+    hashes = precomputedHashes;
+  } else {
+    hashes = await buildBatchHashes(drafts);
+  }
+  const rows = drafts.map((d, i) => ({
+    owner_key: d.owner_key,
+    tx_date: d.tx_date,
+    description: d.description,
+    amount: d.amount,
+    category: d.category,
+    source,
+    dedupe_hash: hashes[i],
+    created_by: userId,
+  }));
   const { data, error } = await supabase
     .from('transactions')
     .insert(rows)

@@ -100,9 +100,11 @@ function EditModal({
   const [category, setCategory] = useState(tx.category);
   const [owner, setOwner] = useState(tx.owner_key);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
   const save = async () => {
     setBusy(true);
+    setError('');
     const ok = await updateTx(tx.id, {
       tx_date: date,
       description: desc,
@@ -112,14 +114,17 @@ function EditModal({
     }, { tx_date: tx.tx_date, description: tx.description ?? '', amount: tx.amount });
     setBusy(false);
     if (ok) onChanged();
+    else setError("Couldn't save — an identical transaction (same date, amount, description) may already exist.");
   };
 
   const remove = async () => {
     if (!window.confirm('Delete this transaction?')) return;
     setBusy(true);
+    setError('');
     const ok = await deleteTx(tx.id);
     setBusy(false);
     if (ok) onChanged();
+    else setError("Couldn't delete — check your connection and try again.");
   };
 
   return (
@@ -157,6 +162,9 @@ function EditModal({
             <option value="rickus">Rickus</option>
             <option value="anjone">Anjoné</option>
           </select>
+          {error && (
+            <div style={{ color: 'var(--danger, #e5484d)', fontSize: '0.8rem' }}>{error}</div>
+          )}
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button className="btn btn-danger" disabled={busy} onClick={() => void remove()}>
               Delete
