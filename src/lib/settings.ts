@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { supabase } from './supabase';
 import type { DashKey } from './types';
 
 export interface DashSettings {
@@ -34,10 +35,19 @@ function saveToStorage(all: Record<string, DashSettings>) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
 }
 
+function cacheLocally(dash: DashKey, settings: DashSettings) {
+  const all = loadFromStorage();
+  all[dash] = settings;
+  saveToStorage(all);
+}
+
 export function getDefaults(): DashSettings {
   return { categories: [...DEFAULT_CATEGORIES], fixedCategories: [...DEFAULT_FIXED] };
 }
 
+/** Settings live in the fintrack_settings table so every device and both
+ *  users see the same category lists; localStorage is only a cache so the
+ *  dashboard renders instantly (and still works offline). */
 export function useSettings(dash: DashKey) {
   const [settings, setSettings] = useState<DashSettings>(() => {
     const all = loadFromStorage();
@@ -45,16 +55,38 @@ export function useSettings(dash: DashKey) {
   });
 
   useEffect(() => {
+    let cancelled = false;
     const all = loadFromStorage();
     setSettings(all[dash] ?? getDefaults());
+    void supabase
+      .from('fintrack_settings')
+      .select('categories, fixed_categories')
+      .eq('dash_key', dash)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        const remote: DashSettings = {
+          categories: data.categories as string[],
+          fixedCategories: data.fixed_categories as string[],
+        };
+        cacheLocally(dash, remote);
+        setSettings(remote);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [dash]);
 
   const update = useCallback((patch: Partial<DashSettings>) => {
     setSettings(prev => {
       const next = { ...prev, ...patch };
-      const all = loadFromStorage();
-      all[dash] = next;
-      saveToStorage(all);
+      cacheLocally(dash, next);
+      void supabase.from('fintrack_settings').upsert({
+        dash_key: dash,
+        categories: next.categories,
+        fixed_categories: next.fixedCategories,
+        updated_at: new Date().toISOString(),
+      });
       return next;
     });
   }, [dash]);

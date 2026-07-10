@@ -223,9 +223,20 @@ export function ImportSection({
 
   const confirm = async () => {
     if (!drafts) return;
-    const toSave = drafts.filter((d) => !d.duplicate && d.description.trim() !== '' && d.amount !== 0);
     setBusy(true);
-    const { inserted, ids, error } = await insertDrafts(toSave, source === 'manual' ? 'manual' : source, userId);
+    // Hash over the FULL list so _N suffixes line up with the duplicate
+    // check, then filter drafts and hashes in tandem.
+    const allHashes = await buildBatchHashes(drafts);
+    const keep = drafts
+      .map((d, i) => ({ d, hash: allHashes[i] }))
+      .filter(({ d }) => !d.duplicate && d.description.trim() !== '' && d.amount !== 0);
+    const toSave = keep.map((k) => k.d);
+    const { inserted, ids, error } = await insertDrafts(
+      toSave,
+      source === 'manual' ? 'manual' : source,
+      userId,
+      keep.map((k) => k.hash),
+    );
     setBusy(false);
     if (error) {
       setStatus(`Save failed: ${error}`);
