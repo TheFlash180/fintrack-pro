@@ -182,18 +182,6 @@ export async function renameCategory(
   return !txRes.error && !budgetRes.error;
 }
 
-export async function deleteBudget(
-  category: string,
-  ym: string,
-): Promise<boolean> {
-  const { error } = await supabase
-    .from('budgets')
-    .delete()
-    .eq('category', category)
-    .eq('effective_from', `${ym}-01`);
-  return !error;
-}
-
 export async function deleteAllBudgetsForCategory(
   category: string,
 ): Promise<boolean> {
