@@ -46,7 +46,7 @@ export function DashboardPage({
   const [ym, setYm] = useState(toYm(new Date()));
   const [allTime, setAllTime] = useState(false);
   const [yearFilter, setYearFilter] = useState<string | null>(null);
-  const { settings, update: updateSettings } = useSettings(dash);
+  const { settings, update: updateSettings, syncError } = useSettings(dash);
   const meta = DASH_META[dash];
 
   const ownerTxs = useMemo(() => filterTxs(txs, dash, null), [txs, dash]);
@@ -101,6 +101,13 @@ export function DashboardPage({
         <span className="sub">{meta.sub}</span>
       </div>
 
+      {syncError && (
+        <div className="error-banner">
+          Settings couldn't sync — changes are saved on this device only until
+          the next successful edit.
+        </div>
+      )}
+
       <MonthPicker
         ym={ym}
         allTime={allTime}
@@ -134,6 +141,7 @@ export function DashboardPage({
             budgets={budgets}
             spend={spendByCategory(filterTxs(txs, 'trollip', ym))}
             ym={ym}
+            categories={settings.categories}
             onSaved={onChanged}
           />
         </div>

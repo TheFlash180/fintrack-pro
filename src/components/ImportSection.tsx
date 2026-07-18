@@ -224,12 +224,22 @@ export function ImportSection({
   const confirm = async () => {
     if (!drafts) return;
     setBusy(true);
-    // Hash over the FULL list so _N suffixes line up with the duplicate
-    // check, then filter drafts and hashes in tandem.
+    // Recompute duplicates against the CURRENT rows: edits and deletions in
+    // the review table shift _N suffixes, so the flags computed when the
+    // review opened can be stale — trusting them can silently drop a legit
+    // row or fail the whole insert on the unique index. (Same-day identical
+    // rows are common in real statements: four "Debit Order Fee -3.00" on
+    // one date is a normal Capitec day.)
+    const existing = await findExistingHashes(drafts);
     const allHashes = await buildBatchHashes(drafts);
     const keep = drafts
       .map((d, i) => ({ d, hash: allHashes[i] }))
-      .filter(({ d }) => !d.duplicate && d.description.trim() !== '' && d.amount !== 0);
+      .filter(
+        ({ d, hash }) =>
+          !existing.has(existsKey(d.owner_key, hash)) &&
+          d.description.trim() !== '' &&
+          d.amount !== 0,
+      );
     const toSave = keep.map((k) => k.d);
     const { inserted, ids, error } = await insertDrafts(
       toSave,

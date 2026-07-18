@@ -53,6 +53,7 @@ export function useSettings(dash: DashKey) {
     const all = loadFromStorage();
     return all[dash] ?? getDefaults();
   });
+  const [syncError, setSyncError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,15 +82,18 @@ export function useSettings(dash: DashKey) {
     setSettings(prev => {
       const next = { ...prev, ...patch };
       cacheLocally(dash, next);
+      // Surface a failed sync instead of silently drifting: the local cache
+      // has already advanced, so the user must know other devices won't see
+      // this change until a later edit succeeds.
       void supabase.from('fintrack_settings').upsert({
         dash_key: dash,
         categories: next.categories,
         fixed_categories: next.fixedCategories,
         updated_at: new Date().toISOString(),
-      });
+      }).then(({ error }) => setSyncError(Boolean(error)));
       return next;
     });
   }, [dash]);
 
-  return { settings, update };
+  return { settings, update, syncError };
 }

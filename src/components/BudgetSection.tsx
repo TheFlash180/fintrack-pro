@@ -2,22 +2,26 @@ import { useState } from 'react';
 import { budgetFor, budgetedCategories, type CategorySpend } from '../lib/aggregate';
 import { deleteAllBudgetsForCategory, saveBudget } from '../lib/data';
 import { fmtZar } from '../lib/format';
-import { CATEGORIES, type Budget } from '../lib/types';
+import type { Budget } from '../lib/types';
 
 export function BudgetSection({
   budgets,
   spend,
   ym,
+  categories,
   onSaved,
 }: {
   budgets: Budget[];
   spend: CategorySpend[];
   ym: string;
+  categories: string[];
   onSaved: () => void;
 }) {
-  const [category, setCategory] = useState<string>('Groceries');
+  const budgetable = categories.filter((c) => c !== 'Salary' && c !== 'Other Income');
+  const [category, setCategory] = useState<string>(budgetable[0] ?? 'Groceries');
   const [amount, setAmount] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const [editCat, setEditCat] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
 
@@ -28,11 +32,14 @@ export function BudgetSection({
     const value = Number(amount);
     if (!Number.isFinite(value) || value <= 0) return;
     setSaving(true);
+    setError('');
     const ok = await saveBudget(category, value, ym);
     setSaving(false);
     if (ok) {
       setAmount('');
       onSaved();
+    } else {
+      setError("The budget didn't save — check your connection and try again.");
     }
   };
 
@@ -40,20 +47,25 @@ export function BudgetSection({
     const value = Number(editAmount);
     if (!Number.isFinite(value) || value <= 0) return;
     setSaving(true);
+    setError('');
     const ok = await saveBudget(cat, value, ym);
     setSaving(false);
     if (ok) {
       setEditCat(null);
       onSaved();
+    } else {
+      setError("The budget didn't save — check your connection and try again.");
     }
   };
 
   const removeBudget = async (cat: string) => {
     if (!window.confirm(`Remove the budget for "${cat}"? This removes all historical budget entries for this category.`)) return;
     setSaving(true);
+    setError('');
     const ok = await deleteAllBudgetsForCategory(cat);
     setSaving(false);
     if (ok) onSaved();
+    else setError("The budget couldn't be removed — check your connection and try again.");
   };
 
   return (
@@ -113,9 +125,11 @@ export function BudgetSection({
         );
       })}
 
+      {error && <div className="error-banner" style={{ marginTop: 10 }}>{error}</div>}
+
       <div className="budget-edit">
         <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          {CATEGORIES.filter((c) => c !== 'Salary' && c !== 'Other Income').map((c) => (
+          {budgetable.map((c) => (
             <option key={c}>{c}</option>
           ))}
         </select>

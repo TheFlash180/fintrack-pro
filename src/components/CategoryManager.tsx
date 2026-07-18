@@ -16,6 +16,7 @@ export function CategoryManager({
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [renaming, setRenaming] = useState(false);
+  const [error, setError] = useState('');
 
   const cats = settings.categories;
 
@@ -33,8 +34,15 @@ export function CategoryManager({
     const oldName = cats[idx];
     if (name !== oldName) {
       setRenaming(true);
-      await renameCategoryInDb(oldName, name);
+      setError('');
+      const ok = await renameCategoryInDb(oldName, name);
       setRenaming(false);
+      if (!ok) {
+        // Don't apply the rename locally when the DB didn't take it —
+        // otherwise the screen and the transactions silently diverge.
+        setError(`Couldn't rename "${oldName}" — check your connection and try again.`);
+        return;
+      }
       onChanged?.();
     }
     const next = [...cats];
@@ -54,6 +62,7 @@ export function CategoryManager({
 
   return (
     <div>
+      {error && <div className="error-banner">{error}</div>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {cats.map((c, i) => (
           <div key={c} className="cat-mgr-row">
