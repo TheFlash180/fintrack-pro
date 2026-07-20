@@ -84,43 +84,42 @@ export function BudgetSection({
         const isEditing = editCat === cat;
         return (
           <div className="budget-row" key={cat}>
-            <div className="head">
-              <span>{cat}</span>
-              <span className="budget-right">
-                {isEditing ? (
-                  <span className="budget-inline-edit">
-                    <input
-                      type="number"
-                      value={editAmount}
-                      onChange={e => setEditAmount(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') void saveEdit(cat); }}
-                      style={{ width: 90, padding: '4px 7px', fontSize: '0.75rem' }}
-                      autoFocus
-                    />
-                    <button className="btn" style={{ padding: '4px 10px', fontSize: '0.7rem' }} disabled={saving} onClick={() => void saveEdit(cat)}>Save</button>
-                    <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: '0.7rem' }} onClick={() => setEditCat(null)}>Cancel</button>
-                  </span>
-                ) : (
-                  <>
-                    <span className="mono">
-                      {fmtZar(actual)} / {fmtZar(budget)}{' '}
-                      {over ? (
-                        <span className="budget-over-label">▲ {fmtZar(actual - budget)} over</span>
-                      ) : (
-                        <span>· {fmtZar(budget - actual)} left</span>
-                      )}
-                    </span>
-                    <span className="budget-actions">
-                      <button onClick={() => { setEditCat(cat); setEditAmount(String(budget)); }} title="Edit budget">&#x270E;</button>
-                      <button onClick={() => void removeBudget(cat)} title="Remove budget">&times;</button>
-                    </span>
-                  </>
-                )}
-              </span>
+            <div className="budget-top">
+              <span className="budget-cat">{cat}</span>
+              {isEditing ? (
+                <span className="budget-inline-edit">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={editAmount}
+                    onChange={e => setEditAmount(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') void saveEdit(cat); }}
+                    style={{ padding: '5px 8px', fontSize: '0.78rem' }}
+                    autoFocus
+                  />
+                  <button className="btn" style={{ padding: '5px 11px', fontSize: '0.72rem' }} disabled={saving} onClick={() => void saveEdit(cat)}>Save</button>
+                  <button className="btn btn-ghost" style={{ padding: '5px 11px', fontSize: '0.72rem' }} onClick={() => setEditCat(null)}>Cancel</button>
+                </span>
+              ) : (
+                <span className="budget-actions">
+                  <button onClick={() => { setEditCat(cat); setEditAmount(String(budget)); }} aria-label={`Edit ${cat} budget`} title="Edit budget">&#x270E;</button>
+                  <button onClick={() => void removeBudget(cat)} aria-label={`Remove ${cat} budget`} title="Remove budget">&times;</button>
+                </span>
+              )}
             </div>
             <div className="budget-track">
               <div className={`budget-fill${over ? ' over' : ''}`} style={{ width: `${pct}%` }} />
             </div>
+            {!isEditing && (
+              <div className="budget-figures mono">
+                <span><span className="spent">{fmtZar(actual)}</span> of {fmtZar(budget)}</span>
+                {over ? (
+                  <span className="budget-over-label">&#9650; {fmtZar(actual - budget)} over</span>
+                ) : (
+                  <span className="budget-left-label">{fmtZar(budget - actual)} left</span>
+                )}
+              </div>
+            )}
           </div>
         );
       })}
@@ -135,16 +134,16 @@ export function BudgetSection({
         </select>
         <input
           type="number"
+          inputMode="numeric"
           placeholder="R / month"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          style={{ maxWidth: 120 }}
         />
         <button className="btn" disabled={!amount || saving} onClick={() => void save()}>
-          Set
+          Set budget
         </button>
       </div>
-      <p style={{ fontSize: '0.72rem', color: 'var(--dim)', marginTop: 8 }}>
+      <p className="budget-note">
         Budgets apply from the selected month forward until you change them.
       </p>
     </div>
