@@ -240,7 +240,7 @@ textarea { width: 100%; min-height: 120px; font-family: var(--font-mono); font-s
   color: var(--dim); font-size: 0.72rem; font-weight: 700; padding: 8px 4px;
   border-radius: 10px; letter-spacing: 0.02em;
 }
-.tabbar a .ico { display: block; font-size: 1.05rem; margin-bottom: 2px; }
+.tabbar a .ico { display: flex; justify-content: center; margin-bottom: 3px; }
 .tabbar a.active { color: var(--tab-accent, var(--accent)); background: var(--surface); }
 
 /* ---------- spend split ---------- */
