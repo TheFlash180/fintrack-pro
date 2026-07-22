@@ -77,7 +77,16 @@ export function ImportSection({
       return;
     }
     setStatus(`${note} Checking for duplicates…`);
-    const existing = await findExistingHashes(newDrafts);
+    let existing: Set<string>;
+    try {
+      existing = await findExistingHashes(newDrafts);
+    } catch {
+      setStatus(
+        `${note} The duplicate check failed — check your connection and try again. ` +
+          'Nothing was imported.',
+      );
+      return;
+    }
     const batchHashes = await buildBatchHashes(newDrafts);
     const flagged = newDrafts.map((d, i) => ({
       ...d,
@@ -230,7 +239,14 @@ export function ImportSection({
     // row or fail the whole insert on the unique index. (Same-day identical
     // rows are common in real statements: four "Debit Order Fee -3.00" on
     // one date is a normal Capitec day.)
-    const existing = await findExistingHashes(drafts);
+    let existing: Set<string>;
+    try {
+      existing = await findExistingHashes(drafts);
+    } catch {
+      setBusy(false);
+      setStatus('The duplicate check failed — check your connection and try again. Nothing was imported.');
+      return;
+    }
     const allHashes = await buildBatchHashes(drafts);
     const keep = drafts
       .map((d, i) => ({ d, hash: allHashes[i] }))

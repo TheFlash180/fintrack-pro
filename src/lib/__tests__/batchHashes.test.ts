@@ -50,3 +50,27 @@ describe('buildBatchHashes', () => {
     expect(two[1]).not.toBe(three[2]);
   });
 });
+
+// The duplicate-check lookup must be chunked: PostgREST encodes .in() filters
+// in the URL, and a 12-month statement (~700 hashes) built a URL big enough
+// for the server to reject — which the old code swallowed, flagging zero
+// duplicates. chunkArray is the piece that keeps every request small.
+import { chunkArray } from '../data';
+
+describe('chunkArray', () => {
+  it('splits into fixed-size chunks with a short tail', () => {
+    expect(chunkArray([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+  });
+
+  it('covers all 700 statement hashes without dropping any', () => {
+    const items = Array.from({ length: 700 }, (_, i) => i);
+    const chunks = chunkArray(items, 100);
+    expect(chunks).toHaveLength(7);
+    expect(chunks.every((c) => c.length <= 100)).toBe(true);
+    expect(chunks.flat()).toEqual(items);
+  });
+
+  it('handles empty input', () => {
+    expect(chunkArray([], 100)).toEqual([]);
+  });
+});
