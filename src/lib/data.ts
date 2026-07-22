@@ -58,7 +58,20 @@ export async function buildBatchHashes(drafts: DraftTx[]): Promise<string[]> {
   });
 }
 
-/** Which of these drafts already exist in the database (same owner + hash)? */
+/** PostgREST encodes `.in()` filters in the request URL, so a big statement
+ *  (a year of transactions ≈ 700 hashes ≈ 45KB of URL) blows the server's
+ *  URL limit. Query in chunks small enough to always fit. */
+const HASH_LOOKUP_CHUNK = 100;
+
+export function chunkArray<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+/** Which of these drafts already exist in the database (same owner + hash)?
+ *  Throws when a lookup fails — a failed check must never read as "no
+ *  duplicates found", or a re-import would silently double-count. */
 export async function findExistingHashes(drafts: DraftTx[]): Promise<Set<string>> {
   const hashes = await buildBatchHashes(drafts);
   const existing = new Set<string>();
@@ -67,13 +80,18 @@ export async function findExistingHashes(drafts: DraftTx[]): Promise<Set<string>
     const ownerHashes = hashes.filter((_, i) => drafts[i].owner_key === owner);
     if (ownerHashes.length === 0) continue;
     const unique = [...new Set(ownerHashes)];
-    const { data } = await supabase
-      .from('transactions')
-      .select('dedupe_hash')
-      .eq('owner_key', owner)
-      .in('dedupe_hash', unique);
-    for (const row of data ?? []) {
-      if (row.dedupe_hash) existing.add(`${owner}|${row.dedupe_hash}`);
+    for (const chunk of chunkArray(unique, HASH_LOOKUP_CHUNK)) {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('dedupe_hash')
+        .eq('owner_key', owner)
+        .in('dedupe_hash', chunk);
+      if (error) {
+        throw new Error(`duplicate check failed: ${error.message}`);
+      }
+      for (const row of data ?? []) {
+        if (row.dedupe_hash) existing.add(`${owner}|${row.dedupe_hash}`);
+      }
     }
   }
   return existing;
