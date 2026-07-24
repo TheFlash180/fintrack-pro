@@ -41,3 +41,24 @@ describe('netWorth', () => {
     expect(nw.asOf).toBeNull();
   });
 });
+
+describe('netWorth as-at date', () => {
+  it('picks the latest instant across mixed timestamp formats', () => {
+    // PostgREST returns "+00:00"; Date.toISOString() writes "Z". Lexically
+    // "…T09:00:00.000Z" sorts after "…T11:22:00+00:00" even though it is
+    // two hours earlier, so a string compare would show the wrong date.
+    const nw = netWorth([
+      acct({ key: 'a', stated_balance: 1, balance_as_of: '2026-07-24T11:22:00+00:00' }),
+      acct({ key: 'b', stated_balance: 1, balance_as_of: '2026-07-24T09:00:00.000Z' }),
+    ]);
+    expect(nw.asOf).toBe('2026-07-24T11:22:00+00:00');
+  });
+
+  it('ignores an unparseable timestamp rather than picking it', () => {
+    const nw = netWorth([
+      acct({ key: 'a', stated_balance: 1, balance_as_of: 'not-a-date' }),
+      acct({ key: 'b', stated_balance: 1, balance_as_of: '2026-07-24T09:00:00.000Z' }),
+    ]);
+    expect(nw.asOf).toBe('2026-07-24T09:00:00.000Z');
+  });
+});

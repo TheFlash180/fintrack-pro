@@ -15,11 +15,22 @@ export function netWorth(accounts: Account[]): NetWorth {
   let assets = 0;
   let liabilities = 0;
   let asOf: string | null = null;
+  let asOfMs = -Infinity;
   for (const a of accounts) {
     if (a.stated_balance == null) continue;
     if (a.is_liability) liabilities += a.stated_balance;
     else assets += a.stated_balance;
-    if (a.balance_as_of && (!asOf || a.balance_as_of > asOf)) asOf = a.balance_as_of;
+    // Compare parsed instants, not strings: the same moment can be written
+    // "…T11:22:00+00:00" (PostgREST) or "…T11:22:00.000Z" (toISOString), and
+    // those two sort the wrong way lexically — which would pin the header to
+    // an older date than the balance actually is.
+    if (!a.balance_as_of) continue;
+    const ms = Date.parse(a.balance_as_of);
+    if (Number.isNaN(ms)) continue;
+    if (ms > asOfMs) {
+      asOfMs = ms;
+      asOf = a.balance_as_of;
+    }
   }
   return { assets, liabilities, net: assets - liabilities, asOf };
 }
