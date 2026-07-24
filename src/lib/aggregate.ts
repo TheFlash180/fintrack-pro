@@ -19,6 +19,7 @@ export function totals(txs: Tx[]): Totals {
   let income = 0;
   let expenses = 0;
   for (const t of txs) {
+    if (t.is_transfer) continue; // inter-account moves are neither income nor spend
     if (t.amount >= 0) income += t.amount;
     else expenses += -t.amount;
   }
@@ -35,6 +36,7 @@ export function spendByCategory(txs: Tx[]): CategorySpend[] {
   const map = new Map<string, number>();
   let total = 0;
   for (const t of txs) {
+    if (t.is_transfer) continue;
     if (t.amount >= 0) continue;
     const v = -t.amount;
     map.set(t.category, (map.get(t.category) ?? 0) + v);
@@ -102,6 +104,7 @@ export function spendSplit(txs: Tx[], fixedCategories?: string[]): SpendSplit {
   let fixed = 0;
   let discretionary = 0;
   for (const t of txs) {
+    if (t.is_transfer) continue;
     if (t.amount >= 0) continue;
     const v = -t.amount;
     if (t.category === 'Savings & Investments') continue;

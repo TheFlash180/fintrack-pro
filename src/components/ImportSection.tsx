@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { categorizeWithHint } from '../lib/categorize';
 import {
   autoMapColumns,
@@ -11,7 +11,8 @@ import {
 } from '../lib/csv';
 import { buildBatchHashes, deleteBatch, existsKey, findExistingHashes, insertDrafts } from '../lib/data';
 import { parseStatementLines } from '../lib/statementParse';
-import type { DraftTx, OwnerKey } from '../lib/types';
+import { isTransferDescription } from '../lib/transfers';
+import type { Account, DraftTx, OwnerKey } from '../lib/types';
 import { ReviewTable } from './ReviewTable';
 
 type RickusSource = 'csv' | 'paste' | 'manual';
@@ -34,14 +35,24 @@ export function ImportSection({
   userId,
   onImported,
   categories,
+  accounts = [],
 }: {
   owner: OwnerKey;
   userId: string;
   onImported: () => void;
   categories?: string[];
+  accounts?: Account[];
 }) {
+  const ownerAccounts = accounts.filter((a) => a.owner_key === owner);
+  const defaultAccount = ownerAccounts[0]?.key ?? null;
   const [open, setOpen] = useState(false);
+  const [accountKey, setAccountKey] = useState<string | null>(defaultAccount);
   const [source, setSource] = useState<string>(owner === 'rickus' ? 'csv' : 'pdf');
+
+  // Accounts arrive with the rest of the data; adopt the default once they load.
+  useEffect(() => {
+    if (accountKey === null && defaultAccount) setAccountKey(defaultAccount);
+  }, [accountKey, defaultAccount]);
   const [drafts, setDrafts] = useState<DraftTx[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
@@ -63,13 +74,20 @@ export function ImportSection({
   const toDrafts = (
     rows: { tx_date: string; description: string; amount: number; category?: string }[],
   ): DraftTx[] =>
-    rows.map((r) => ({
-      tx_date: r.tx_date,
-      description: r.description,
-      amount: r.amount,
-      category: categorizeWithHint(r.description, r.category),
-      owner_key: owner,
-    }));
+    rows.map((r) => {
+      const transfer = isTransferDescription(r.description);
+      return {
+        tx_date: r.tx_date,
+        description: r.description,
+        amount: r.amount,
+        // Transfers keep a clear "Transfer" label and are excluded from spend;
+        // everything else runs through the normal categoriser.
+        category: transfer ? 'Transfer' : categorizeWithHint(r.description, r.category),
+        owner_key: owner,
+        account_key: accountKey,
+        is_transfer: transfer,
+      };
+    });
 
   const startReview = async (newDrafts: DraftTx[], note: string) => {
     if (newDrafts.length === 0) {
@@ -223,6 +241,8 @@ export function ImportSection({
         amount: 0,
         category: 'Uncategorised',
         owner_key: owner,
+        account_key: accountKey,
+        is_transfer: false,
       },
     ]);
     setStatus('Fill in the row(s) and confirm.');
@@ -351,6 +371,30 @@ export function ImportSection({
 
       {!drafts && (
         <>
+          {ownerAccounts.length > 1 && (
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: '0.8rem', color: 'var(--dim)', display: 'block', marginBottom: 4 }}>
+                Import into which account?
+              </label>
+              <select
+                value={accountKey ?? ''}
+                onChange={(e) => setAccountKey(e.target.value || null)}
+                style={{ width: '100%' }}
+              >
+                {ownerAccounts.map((a) => (
+                  <option key={a.key} value={a.key}>
+                    {a.name}
+                    {a.external_ref ? ` · ${a.external_ref}` : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="notice" style={{ marginTop: 6 }}>
+                Card repayments and savings top-ups are detected automatically and
+                tagged as transfers, so they don't count as spending.
+              </p>
+            </div>
+          )}
+
           <div className="import-tabs">
             {sources.map((s) => (
               <button
@@ -370,7 +414,8 @@ export function ImportSection({
           {source === 'csv' && owner === 'rickus' && (
             <>
               <p className="notice">
-                Upload your Capitec CSV export. Columns are matched automatically.
+                Upload a Capitec or Discovery CSV export. Columns are matched
+                automatically.
               </p>
               <input
                 type="file"

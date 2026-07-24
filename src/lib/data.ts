@@ -1,33 +1,98 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import { dedupeHash } from './dedupe';
-import type { Budget, DraftTx, Tx } from './types';
+import type { Account, Budget, DraftTx, Tx } from './types';
 
 // The whole household history is small (personal-finance scale), so we fetch
 // it once and aggregate client-side; dashboards and filters are then instant.
 const MAX_ROWS = 50000;
 
+const TX_COLS_FULL =
+  'id, owner_key, tx_date, description, amount, category, source, dedupe_hash, account_key, is_transfer';
+const TX_COLS_LEGACY =
+  'id, owner_key, tx_date, description, amount, category, source, dedupe_hash';
+
+/** Fetch transactions, tolerating a database that hasn't had migration 003
+ *  applied yet: if the account_key / is_transfer columns don't exist, fall
+ *  back to the legacy columns and default them, so the app never hard-fails
+ *  during the window between deploy and migration. */
+async function fetchTxs(): Promise<{ data: Tx[] | null; error: unknown }> {
+  const full = await supabase
+    .from('transactions')
+    .select(TX_COLS_FULL)
+    .order('tx_date', { ascending: false })
+    .range(0, MAX_ROWS - 1);
+  if (!full.error) {
+    return { data: normalizeTxs(full.data as Record<string, unknown>[]), error: null };
+  }
+  const legacy = await supabase
+    .from('transactions')
+    .select(TX_COLS_LEGACY)
+    .order('tx_date', { ascending: false })
+    .range(0, MAX_ROWS - 1);
+  if (legacy.error) return { data: null, error: legacy.error };
+  return { data: normalizeTxs(legacy.data as Record<string, unknown>[]), error: null };
+}
+
+function normalizeTxs(rows: Record<string, unknown>[]): Tx[] {
+  return rows.map((t) => ({
+    id: t.id as string,
+    owner_key: t.owner_key as Tx['owner_key'],
+    tx_date: t.tx_date as string,
+    description: (t.description as string) ?? null,
+    amount: Number(t.amount),
+    category: t.category as string,
+    source: t.source as string,
+    dedupe_hash: (t.dedupe_hash as string) ?? null,
+    account_key: (t.account_key as string) ?? null,
+    is_transfer: Boolean(t.is_transfer),
+  }));
+}
+
 export function useFinData(enabled: boolean) {
   const [txs, setTxs] = useState<Tx[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [txRes, bRes] = await Promise.all([
-      supabase
-        .from('transactions')
-        .select('id, owner_key, tx_date, description, amount, category, source, dedupe_hash')
-        .order('tx_date', { ascending: false })
-        .range(0, MAX_ROWS - 1),
+    const [txRes, bRes, aRes] = await Promise.all([
+      fetchTxs(),
       supabase.from('budgets').select('id, category, monthly_amount, effective_from'),
+      // The accounts table only exists after migration 003; a failure here is
+      // not fatal — the overview simply stays hidden until it's applied.
+      supabase
+        .from('fintrack_accounts')
+        .select(
+          'key, owner_key, name, short_name, kind, is_liability, external_ref, sort_order, stated_balance, balance_as_of, opening_balance, opening_date',
+        )
+        .order('sort_order'),
     ]);
     if (txRes.error || bRes.error) {
       setError('Could not load your data — check your connection and refresh.');
     } else {
-      setTxs((txRes.data as Tx[]).map((t) => ({ ...t, amount: Number(t.amount) })));
+      setTxs(txRes.data ?? []);
       setBudgets(
         (bRes.data as Budget[]).map((b) => ({ ...b, monthly_amount: Number(b.monthly_amount) })),
+      );
+      setAccounts(
+        aRes.error
+          ? []
+          : (aRes.data as Record<string, unknown>[]).map((a) => ({
+              key: a.key as string,
+              owner_key: a.owner_key as Account['owner_key'],
+              name: a.name as string,
+              short_name: a.short_name as string,
+              kind: a.kind as Account['kind'],
+              is_liability: Boolean(a.is_liability),
+              external_ref: (a.external_ref as string) ?? null,
+              sort_order: Number(a.sort_order),
+              stated_balance: a.stated_balance == null ? null : Number(a.stated_balance),
+              balance_as_of: (a.balance_as_of as string) ?? null,
+              opening_balance: a.opening_balance == null ? null : Number(a.opening_balance),
+              opening_date: (a.opening_date as string) ?? null,
+            })),
       );
       setError(null);
     }
@@ -38,7 +103,7 @@ export function useFinData(enabled: boolean) {
     if (enabled) void refresh();
   }, [enabled, refresh]);
 
-  return { txs, budgets, loading, error, refresh };
+  return { txs, budgets, accounts, loading, error, refresh };
 }
 
 export async function hashDraft(d: DraftTx): Promise<string> {
@@ -132,6 +197,8 @@ export async function insertDrafts(
     source,
     dedupe_hash: hashes[i],
     created_by: userId,
+    account_key: d.account_key ?? null,
+    is_transfer: d.is_transfer ?? false,
   }));
   const { data, error } = await supabase
     .from('transactions')
@@ -187,6 +254,27 @@ export async function saveBudget(
       { onConflict: 'category,effective_from' },
     );
   return !error;
+}
+
+/** Save edited account balances. Stamps balance_as_of = now for any account
+ *  given a figure; clearing a field (null) clears its as-of too. */
+export async function saveAccountBalances(
+  updates: { key: string; stated_balance: number | null }[],
+): Promise<boolean> {
+  if (updates.length === 0) return true;
+  const asOf = new Date().toISOString();
+  const results = await Promise.all(
+    updates.map((u) =>
+      supabase
+        .from('fintrack_accounts')
+        .update({
+          stated_balance: u.stated_balance,
+          balance_as_of: u.stated_balance == null ? null : asOf,
+        })
+        .eq('key', u.key),
+    ),
+  );
+  return results.every((r) => !r.error);
 }
 
 export async function renameCategory(

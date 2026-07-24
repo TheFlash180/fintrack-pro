@@ -41,6 +41,7 @@ export default function App() {
         dash={dash}
         txs={data.txs}
         budgets={data.budgets}
+        accounts={data.accounts}
         loading={data.loading}
         onChanged={() => void data.refresh()}
         userId={session.user.id}

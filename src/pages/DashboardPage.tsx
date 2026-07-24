@@ -9,7 +9,8 @@ import {
 } from '../lib/aggregate';
 import { shiftYm, toYm } from '../lib/format';
 import { useSettings } from '../lib/settings';
-import type { Budget, DashKey, OwnerKey, Tx } from '../lib/types';
+import type { Account, Budget, DashKey, OwnerKey, Tx } from '../lib/types';
+import { AccountsOverview } from '../components/AccountsOverview';
 import { MonthPicker } from '../components/MonthPicker';
 import { StatTiles } from '../components/StatTiles';
 import { CategoryList } from '../components/CategoryList';
@@ -32,6 +33,7 @@ export function DashboardPage({
   dash,
   txs,
   budgets,
+  accounts,
   loading,
   onChanged,
   userId,
@@ -39,6 +41,7 @@ export function DashboardPage({
   dash: DashKey;
   txs: Tx[];
   budgets: Budget[];
+  accounts: Account[];
   loading: boolean;
   onChanged: () => void;
   userId: string | null;
@@ -120,6 +123,11 @@ export function DashboardPage({
 
       <StatTiles totals={totals(periodTxs)} />
 
+      <AccountsOverview
+        accounts={dash === 'trollip' ? accounts : accounts.filter((a) => a.owner_key === dash)}
+        onChanged={onChanged}
+      />
+
       <div className="card">
         <h3>Income vs expenses{dash === 'trollip' ? '' : ' · last 6 months'}</h3>
         <IncomeExpenseChart data={dash === 'trollip' ? series.slice(-6) : series} />
@@ -168,7 +176,7 @@ export function DashboardPage({
       </Collapsible>
 
       {dash !== 'trollip' && userId && (
-        <ImportSection key={dash} owner={dash as OwnerKey} userId={userId} onImported={onChanged} categories={settings.categories} />
+        <ImportSection key={dash} owner={dash as OwnerKey} userId={userId} onImported={onChanged} categories={settings.categories} accounts={accounts} />
       )}
     </div>
   );

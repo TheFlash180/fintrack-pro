@@ -86,6 +86,36 @@ describe('Capitec CSV export (real format: split Money In / Money Out / Fee)', (
   });
 });
 
+describe('Discovery CSV export (single signed Amount + "Value Date" column)', () => {
+  const discCsv = `"Value Date","Value Time","Type","Description","Beneficiary or CardHolder","Amount"
+2026-07-08,19:57:16,"Samsung Wallet","ENGEN WAVERLEY SERVICE Johannesburg","R TROLLIP",-863.00
+2026-07-02,17:56:21,"EFT","CAPITEC   CREDIT","",254.99
+2026-06-30,00:27:55,"Interest","Interest Earned at 7.20%","",482.03`;
+
+  it('auto-maps despite the "Value Date"/"Value Time" columns (not the amount)', () => {
+    const table = parseCsv(discCsv);
+    const mapping = autoMapColumns(table.headers);
+    expect(mapping).toEqual({
+      date: 0,
+      description: 3,
+      amount: 5,
+      moneyIn: null,
+      moneyOut: null,
+      fee: null,
+      category: null,
+    });
+  });
+
+  it('extracts signed amounts and dates from the single Amount column', () => {
+    const table = parseCsv(discCsv);
+    const { ok, skipped } = extractRows(table, autoMapColumns(table.headers)!);
+    expect(skipped).toBe(0);
+    expect(ok).toHaveLength(3);
+    expect(ok[0]).toMatchObject({ tx_date: '2026-07-08', amount: -863 });
+    expect(ok.find((r) => r.description === 'CAPITEC   CREDIT')!.amount).toBe(254.99);
+  });
+});
+
 describe('flexible parsing', () => {
   it('parses date formats', () => {
     expect(parseDateFlexible('2026/06/15')).toBe('2026-06-15');
