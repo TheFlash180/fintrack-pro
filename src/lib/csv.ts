@@ -73,7 +73,9 @@ export function autoMapColumns(headers: string[]): ColumnMapping | null {
   const moneyOut = find([/money\s?out/i, /geld\s?uit/i]);
   const fee = find([/^fee(s)?$/i, /^fooi/i]);
   const category = find([/^category$/i, /^kategorie/i]);
-  const amount = find([/^amount$/i, /^bedrag/i, /amount/i, /value/i]);
+  // `/^value$/i` (not `/value/i`) so a "Value Date" / "Value Time" column —
+  // as Discovery exports use — is never mistaken for the amount column.
+  const amount = find([/^amount$/i, /^bedrag/i, /amount/i, /^value$/i]);
 
   if (date < 0 || description < 0 || date === description) return null;
 
