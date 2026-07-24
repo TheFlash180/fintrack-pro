@@ -12,6 +12,14 @@ const TX_COLS_FULL =
 const TX_COLS_LEGACY =
   'id, owner_key, tx_date, description, amount, category, source, dedupe_hash';
 
+/** Postgres "column does not exist". Anything else — a dropped connection, a
+ *  timeout — must NOT trigger the legacy fallback: those rows would come back
+ *  with is_transfer defaulted to false, silently counting every transfer as
+ *  spending. A visible load error is far better than quietly wrong totals. */
+function isMissingColumnError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && (error as { code?: string }).code === '42703';
+}
+
 /** Fetch transactions, tolerating a database that hasn't had migration 003
  *  applied yet: if the account_key / is_transfer columns don't exist, fall
  *  back to the legacy columns and default them, so the app never hard-fails
@@ -25,6 +33,7 @@ async function fetchTxs(): Promise<{ data: Tx[] | null; error: unknown }> {
   if (!full.error) {
     return { data: normalizeTxs(full.data as Record<string, unknown>[]), error: null };
   }
+  if (!isMissingColumnError(full.error)) return { data: null, error: full.error };
   const legacy = await supabase
     .from('transactions')
     .select(TX_COLS_LEGACY)
