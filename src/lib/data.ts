@@ -222,7 +222,9 @@ export async function deleteBatch(ids: string[]): Promise<{ deleted: number; err
 
 export async function updateTx(
   id: string,
-  patch: Partial<Pick<Tx, 'tx_date' | 'description' | 'amount' | 'category' | 'owner_key'>>,
+  patch: Partial<
+    Pick<Tx, 'tx_date' | 'description' | 'amount' | 'category' | 'owner_key' | 'is_transfer'>
+  >,
   fullTx?: Pick<Tx, 'tx_date' | 'description' | 'amount'>,
 ): Promise<boolean> {
   const updates: Record<string, unknown> = { ...patch };

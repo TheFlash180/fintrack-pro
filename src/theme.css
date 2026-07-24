@@ -386,3 +386,14 @@ textarea { width: 100%; min-height: 120px; font-family: var(--font-mono); font-s
 .acct-input { width: 120px; text-align: right; font-family: var(--font-mono); font-size: 0.9rem;
   background: var(--surface-3); border: 1px solid var(--border); color: var(--text);
   border-radius: 8px; padding: 6px 8px; }
+
+/* Transfer flag: toggle in the edit modal, tag on transaction rows */
+.transfer-toggle { display: flex; gap: 9px; align-items: flex-start; padding: 9px 10px;
+  background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 10px;
+  cursor: pointer; }
+.transfer-toggle input { margin-top: 2px; flex-shrink: 0; }
+.transfer-toggle span { display: flex; flex-direction: column; gap: 2px; font-size: 0.82rem; }
+.transfer-toggle small { color: var(--dim); font-size: 0.7rem; }
+.transfer-tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+  background: var(--surface-3); border: 1px solid var(--border); color: var(--dim);
+  font-size: 0.62rem; letter-spacing: 0.04em; text-transform: uppercase; }
