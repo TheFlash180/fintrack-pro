@@ -125,7 +125,7 @@ export function DashboardPage({
 
       <AccountsOverview
         accounts={dash === 'trollip' ? accounts : accounts.filter((a) => a.owner_key === dash)}
-        txs={txs}
+        onChanged={onChanged}
       />
 
       <div className="card">

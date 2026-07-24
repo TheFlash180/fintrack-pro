@@ -256,6 +256,27 @@ export async function saveBudget(
   return !error;
 }
 
+/** Save edited account balances. Stamps balance_as_of = now for any account
+ *  given a figure; clearing a field (null) clears its as-of too. */
+export async function saveAccountBalances(
+  updates: { key: string; stated_balance: number | null }[],
+): Promise<boolean> {
+  if (updates.length === 0) return true;
+  const asOf = new Date().toISOString();
+  const results = await Promise.all(
+    updates.map((u) =>
+      supabase
+        .from('fintrack_accounts')
+        .update({
+          stated_balance: u.stated_balance,
+          balance_as_of: u.stated_balance == null ? null : asOf,
+        })
+        .eq('key', u.key),
+    ),
+  );
+  return results.every((r) => !r.error);
+}
+
 export async function renameCategory(
   oldName: string,
   newName: string,

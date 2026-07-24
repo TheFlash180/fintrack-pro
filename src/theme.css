@@ -383,3 +383,6 @@ textarea { width: 100%; min-height: 120px; font-family: var(--font-mono); font-s
 .acct-bal.neg { color: var(--neg); }
 .acct-divider { font-size: 0.66rem; color: var(--dim); letter-spacing: 0.09em;
   text-transform: uppercase; margin: 12px 0 2px; }
+.acct-input { width: 120px; text-align: right; font-family: var(--font-mono); font-size: 0.9rem;
+  background: var(--surface-3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 6px 8px; }
