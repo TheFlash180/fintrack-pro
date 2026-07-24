@@ -110,7 +110,9 @@ function ReconRow({ account, accountTxs }: { account: Account; accountTxs: Tx[] 
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>
-        {recon.computed == null ? (
+        {summary.count === 0 ? (
+          <div className="acct-ref">not imported yet</div>
+        ) : recon.computed == null ? (
           <div className="acct-ref">
             movement {summary.movement >= 0 ? '+' : ''}
             {fmtZar(summary.movement)}
