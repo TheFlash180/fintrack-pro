@@ -6,6 +6,9 @@ describe('categorize', () => {
     expect(categorize('Purchase Checkers Sandton')).toBe('Groceries');
     expect(categorize('POS Purchase Woolworths Fourways')).toBe('Groceries');
     expect(categorize('Purchase ENGEN Rivonia')).toBe('Fuel');
+    expect(categorize('Total Douglasdale C GP')).toBe('Fuel');
+    expect(categorize('TOTAL VILLAGE Bryanston')).toBe('Fuel');
+    expect(categorize('TOTAL - DOUGLASDALE F/ DOUGLASDALE')).toBe('Fuel');
     expect(categorize('Debit Order Netflix.com')).toBe('Subscriptions');
     expect(categorize('Vodacom Airtime')).toBe('Phone & Internet');
     expect(categorize('Salary Payment Employer XYZ')).toBe('Salary');

@@ -13,7 +13,9 @@ export const RULES: Rule[] = [
   // groceries
   { match: /checkers|shoprite|pick n pay|pnp|woolworths|woolies|spar\b|food lover|boxer|usave|ok foods/i, category: 'Groceries' },
   // fuel
-  { match: /engen|sasol|shell|bp\b|total\s?energies|caltex|astron|fuel|petrol|garage/i, category: 'Fuel' },
+  // "total" covers Total/TotalEnergies stations (Total Village, Total
+  // Douglasdale, TOTAL - DOUGLASDALE…) but not "total due/amount/balance".
+  { match: /engen|sasol|shell|bp\b|\btotal\b(?!\s*(due|amount|balance|cost))|caltex|astron|fuel|petrol|garage/i, category: 'Fuel' },
   // bond / home loan repayment
   { match: /bond|home loan|h loan|huislening/i, category: 'Bond' },
   // housing

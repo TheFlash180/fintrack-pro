@@ -86,6 +86,19 @@ describe('Capitec CSV export (real format: split Money In / Money Out / Fee)', (
   });
 });
 
+describe('pending transactions', () => {
+  it('skips rows a bank marks "(Pending)" so they do not duplicate once settled', () => {
+    const csv = `date,description,amount
+2026-07-23,(Pending) Movies At Monte Cape Town,-210.00
+2026-07-22,Pick n Pay Randburg,-653.65`;
+    const table = parseCsv(csv);
+    const { ok, skipped } = extractRows(table, autoMapColumns(table.headers)!);
+    expect(skipped).toBe(1);
+    expect(ok).toHaveLength(1);
+    expect(ok[0].description).toBe('Pick n Pay Randburg');
+  });
+});
+
 describe('Discovery CSV export (single signed Amount + "Value Date" column)', () => {
   const discCsv = `"Value Date","Value Time","Type","Description","Beneficiary or CardHolder","Amount"
 2026-07-08,19:57:16,"Samsung Wallet","ENGEN WAVERLEY SERVICE Johannesburg","R TROLLIP",-863.00

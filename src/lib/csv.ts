@@ -189,7 +189,10 @@ export function extractRows(table: CsvTable, mapping: ColumnMapping): { ok: CsvR
       else if (feeVal !== null && feeVal !== 0) amount = -Math.abs(feeVal);
     }
 
-    if (!date || amount === null) {
+    // Skip pending transactions (Capitec prefixes them "(Pending)"). They're
+    // not final and reappear with a settled description/date on the next
+    // export — importing them now would duplicate once they clear.
+    if (!date || amount === null || /^\(pending\)/i.test(description)) {
       skipped++;
       continue;
     }
