@@ -52,6 +52,7 @@ export function TxList({
             <div className="tx-meta">
               {t.tx_date} · {t.category}
               {showOwner && ` · ${OWNER_LABEL[t.owner_key]}`}
+              {t.is_transfer && <span className="transfer-tag">transfer</span>}
             </div>
           </div>
           <span className={`tx-amt ${t.amount >= 0 ? 'pos' : 'neg'}`}>
@@ -99,6 +100,7 @@ function EditModal({
   const [amount, setAmount] = useState(String(tx.amount));
   const [category, setCategory] = useState(tx.category);
   const [owner, setOwner] = useState(tx.owner_key);
+  const [isTransfer, setIsTransfer] = useState(tx.is_transfer);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -111,6 +113,7 @@ function EditModal({
       amount: Number(amount),
       category,
       owner_key: owner,
+      is_transfer: isTransfer,
     }, { tx_date: tx.tx_date, description: tx.description ?? '', amount: tx.amount });
     setBusy(false);
     if (ok) onChanged();
@@ -162,6 +165,24 @@ function EditModal({
             <option value="rickus">Rickus</option>
             <option value="anjone">Anjoné</option>
           </select>
+          <label className="transfer-toggle">
+            <input
+              type="checkbox"
+              checked={isTransfer}
+              onChange={(e) => {
+                const on = e.target.checked;
+                setIsTransfer(on);
+                // Keep the label in step with the flag, but never clobber a
+                // real category the user picked when un-flagging.
+                if (on) setCategory('Transfer');
+                else if (category === 'Transfer') setCategory('Uncategorised');
+              }}
+            />
+            <span>
+              Transfer between my own accounts
+              <small>Excluded from income and spending totals</small>
+            </span>
+          </label>
           {error && (
             <div style={{ color: 'var(--danger, #e5484d)', fontSize: '0.8rem' }}>{error}</div>
           )}

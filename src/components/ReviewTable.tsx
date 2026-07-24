@@ -68,6 +68,9 @@ export function ReviewTable({
               <th style={{ minWidth: 180 }}>Description</th>
               <th style={{ minWidth: 90 }}>Amount</th>
               <th style={{ minWidth: 120 }}>Category</th>
+              <th style={{ minWidth: 60 }} title="Money moved between your own accounts — excluded from spending">
+                Transfer
+              </th>
               <th style={{ minWidth: 90 }}>Owner</th>
               <th />
             </tr>
@@ -111,6 +114,24 @@ export function ReviewTable({
                         <option key={d.category}>{d.category}</option>
                       )}
                     </select>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(d.is_transfer)}
+                      title="Transfer between your own accounts"
+                      onChange={(e) => {
+                        const on = e.target.checked;
+                        update(i, {
+                          is_transfer: on,
+                          ...(on
+                            ? { category: 'Transfer' }
+                            : d.category === 'Transfer'
+                              ? { category: 'Uncategorised' }
+                              : {}),
+                        });
+                      }}
+                    />
                   </td>
                   <td>
                     <select
