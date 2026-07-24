@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { netWorth } from '../lib/accounts';
+import { parseAmountFlexible } from '../lib/csv';
 import { saveAccountBalances } from '../lib/data';
 import { fmtZar } from '../lib/format';
 import type { Account } from '../lib/types';
@@ -41,14 +42,17 @@ export function AccountsOverview({
 
   const save = async () => {
     setBusy(true);
-    const updates = accounts
-      .map((a) => {
-        const raw = (draft[a.key] ?? '').trim();
-        const value = raw === '' ? null : Number(raw.replace(/[R,\s]/g, ''));
-        return { key: a.key, stated_balance: value, current: a.stated_balance };
-      })
-      .filter((u) => u.stated_balance !== u.current && !(u.stated_balance != null && Number.isNaN(u.stated_balance)))
-      .map(({ key, stated_balance }) => ({ key, stated_balance }));
+    const updates: { key: string; stated_balance: number | null }[] = [];
+    for (const a of accounts) {
+      const raw = (draft[a.key] ?? '').trim();
+      // Empty = clear the balance on purpose. A non-empty but unparseable
+      // entry (a typo) is skipped, never silently wiped.
+      // parseAmountFlexible handles both SA formats — "87 860,58" and
+      // "87,860.58" — where a naive comma strip would 100× the former.
+      const value = raw === '' ? null : parseAmountFlexible(raw);
+      if (raw !== '' && value === null) continue; // unparseable → leave as-is
+      if (value !== a.stated_balance) updates.push({ key: a.key, stated_balance: value });
+    }
     const ok = await saveAccountBalances(updates);
     setBusy(false);
     if (ok) {
