@@ -170,7 +170,7 @@ export function DashboardPage({
       </Collapsible>
 
       {dash !== 'trollip' && userId && (
-        <ImportSection key={dash} owner={dash as OwnerKey} userId={userId} onImported={onChanged} categories={settings.categories} accounts={accounts} />
+        <ImportSection key={dash} owner={dash as OwnerKey} userId={userId} onImported={onChanged} categories={settings.categories} accounts={accounts} txs={txs} />
       )}
     </div>
   );
