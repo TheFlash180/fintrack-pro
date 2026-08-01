@@ -23,8 +23,15 @@ hosting, Recharts dashboards. Installable on phone and desktop.
 - **No double-counting.** Each transaction gets a SHA-256 hash of
   date+amount+description; re-uploading the same statement flags rows as
   already imported and the database unique index skips them regardless.
-- **Auto-categorisation** by SA-merchant keyword rules
-  ([src/lib/categorize.ts](src/lib/categorize.ts) — edit freely).
+- **Auto-categorisation that learns.** Priority is: how you filed that merchant
+  last time → the bank's own category column → SA-merchant keyword rules
+  ([src/lib/categorize.ts](src/lib/categorize.ts) — edit freely). Matching is on
+  a normalised merchant key ([src/lib/merchant.ts](src/lib/merchant.ts)) that
+  strips transaction ids, card numbers and mandate references, so the same shop
+  is recognised even when the bank changes its wording.
+- **Transfers between your own accounts are not spending.** They are detected
+  structurally ([src/lib/transfers.ts](src/lib/transfers.ts)) and excluded from
+  the expense totals, so moving money to savings does not read as a bad month.
 - **Three dashboards** — Rickus, Anjoné, Trollip (household) — each with
   income/expenses/net tiles, income-vs-expenses chart, ranked category spend,
   and recent transactions; month picker with full-history browsing and an
