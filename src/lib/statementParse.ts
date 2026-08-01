@@ -187,6 +187,18 @@ export function correctSignsFromBalances(rows: StatementRow[]): StatementRow[] {
   return out;
 }
 
+/** A transaction the bank has not settled yet. It reappears on the next
+ *  export with a different description ("(Pending) KFC Johannesburg" becomes
+ *  "KFC Johannesburg") and often a different date, so the dedupe hash does not
+ *  match and it imports a second time. Importing it now buys nothing — it will
+ *  arrive properly within days — and costs a duplicate that is easy to miss.
+ *
+ *  The CSV path drops these too; keeping the rule in both places means it
+ *  cannot depend on which format a statement happens to arrive in. */
+export function isPendingLine(text: string): boolean {
+  return /\(pending\)/i.test(text);
+}
+
 export function parseStatementLines(
   lines: string[],
   profile: StatementProfile,
@@ -194,6 +206,7 @@ export function parseStatementLines(
   const rows: StatementRow[] = [];
   if (profile === 'capitec') {
     for (const line of lines) {
+      if (isPendingLine(line)) continue;
       const row = parseCapitecLine(line);
       if (row) rows.push(row);
     }
@@ -202,6 +215,7 @@ export function parseStatementLines(
     for (const line of lines) {
       // Skip obvious non-transaction summary rows.
       if (/openingsaldo|afsluitingsaldo|opening balance|closing balance/i.test(line)) continue;
+      if (isPendingLine(line)) continue;
       const row = parseFnbLine(line, period);
       if (row) rows.push(row);
     }
