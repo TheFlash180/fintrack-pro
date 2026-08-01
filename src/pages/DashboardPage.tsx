@@ -10,7 +10,6 @@ import {
 import { shiftYm, toYm } from '../lib/format';
 import { useSettings } from '../lib/settings';
 import type { Account, Budget, DashKey, OwnerKey, Tx } from '../lib/types';
-import { AccountsOverview } from '../components/AccountsOverview';
 import { MonthPicker } from '../components/MonthPicker';
 import { StatTiles } from '../components/StatTiles';
 import { CategoryList } from '../components/CategoryList';
@@ -122,11 +121,6 @@ export function DashboardPage({
       />
 
       <StatTiles totals={totals(periodTxs)} />
-
-      <AccountsOverview
-        accounts={dash === 'trollip' ? accounts : accounts.filter((a) => a.owner_key === dash)}
-        onChanged={onChanged}
-      />
 
       <div className="card">
         <h3>Income vs expenses{dash === 'trollip' ? '' : ' · last 6 months'}</h3>

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { findStatementPeriod, parseStatementLines } from '../statementParse';
+import { findStatementPeriod, parseStatementLines, isPendingLine } from '../statementParse';
 
 const capitecLines = readFileSync(
   new URL('./fixtures/capitec-sample.txt', import.meta.url),
@@ -80,5 +80,26 @@ describe('fnb profile — real Afrikaans statement (FNB Fusion)', () => {
   it('does not emit a row for the closing-balance summary line', () => {
     const rows = parseStatementLines(fnbAfrikaansLines, 'fnb');
     expect(rows.some((r) => /afsluitingsaldo/i.test(r.description))).toBe(false);
+  });
+});
+
+describe('pending transactions', () => {
+  it('recognises the (Pending) marker however it is cased', () => {
+    expect(isPendingLine('04/07/2026 (Pending) Steam Games Bellevue 64.99')).toBe(true);
+    expect(isPendingLine('04/07/2026 (PENDING) KFC Johannesburg 184.60')).toBe(true);
+    expect(isPendingLine('04/07/2026 Steam Games Bellevue 64.99')).toBe(false);
+  });
+
+  it('does not emit a row for a pending line', () => {
+    // A pending transaction settles within days under a DIFFERENT description
+    // and often a different date, so its dedupe hash will not match and it
+    // imports a second time. The CSV path already drops these; the statement
+    // path must agree or the duplicate depends on the file format.
+    const lines = [
+      '01/07/2026 Pick n Pay Randburg 360.73 1000.00',
+      '04/07/2026 (Pending) Steam Games Bellevue 64.99 935.01',
+    ];
+    const rows = parseStatementLines(lines, 'capitec');
+    expect(rows.some((r) => /pending/i.test(r.description))).toBe(false);
   });
 });
