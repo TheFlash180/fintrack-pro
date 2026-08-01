@@ -19,6 +19,27 @@ describe('isTransferDescription', () => {
     expect(isTransferDescription('Credit to Savings')).toBe(true);
   });
 
+  it('catches a savings pot it has never seen before', () => {
+    // The rule is anchored on Capitec's "Banking App Transfer to" wording
+    // rather than on the pot names, so a new plan is caught the first time it
+    // appears instead of quietly counting as spending until someone notices.
+    expect(isTransferDescription('Banking App Transfer to Nuwe Huis: Transfer')).toBe(true);
+    expect(isTransferDescription('Banking App Transfer to Vakansie: Transfer')).toBe(true);
+    expect(isTransferDescription('Banking App Transfer to Emergency Fund')).toBe(true);
+  });
+
+  it('does not treat an incoming payment as a transfer just for saying "transfer"', () => {
+    // A real R550 received from a person. A naive /transfer/ rule would strip
+    // this out of income — it is the counter-example the pattern is shaped by.
+    expect(isTransferDescription('Payment Received: Absa Bank Reinardt Transfer 3249102665'))
+      .toBe(false);
+  });
+
+  it('does not treat paying someone else as an internal transfer', () => {
+    expect(isTransferDescription('Banking App External Payment: Maria Domestic')).toBe(false);
+    expect(isTransferDescription('Banking App External Payment: Pastor Wayne Church')).toBe(false);
+  });
+
   it('does NOT flag real spend or income', () => {
     expect(isTransferDescription('Engen Waverley (Card 9775)')).toBe(false);
     expect(isTransferDescription('VODACOM 0488057208 I9022876')).toBe(false); // airtime = real spend

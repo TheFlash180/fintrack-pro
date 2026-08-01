@@ -19,7 +19,16 @@
 
 const TRANSFER_PATTERNS: RegExp[] = [
   /discovery\s+credit\s+car/i, // Capitec side of a card repayment
-  /transfer\s+to\s+nuwe\s+(foon|kar)/i, // Capitec → notice-savings
+  // Capitec → any savings plan. Anchored on "Banking App Transfer to", which
+  // is the wording Capitec reserves for moving money between your OWN
+  // accounts; paying someone else reads "Banking App External Payment" or
+  // "Payment to". Matching the structure rather than the plan names means a
+  // new savings pot is caught the first time it appears, instead of quietly
+  // counting as spending until someone notices and adds it here.
+  /banking\s+app\s+transfer\s+to\s+/i,
+  // Belt and braces for the household's "Nuwe <thing>" naming, in case the
+  // same move ever arrives without the Banking App prefix.
+  /\btransfer\s+to\s+nuwe\s+/i,
   /transfer\s+received\s+from\s+main\s+account/i, // notice-savings ← Capitec
   /capitec\s+credit\b/i, // card ← Capitec repayment
   /capitec\s+savings\b/i, // Discovery savings ← Capitec deposit
