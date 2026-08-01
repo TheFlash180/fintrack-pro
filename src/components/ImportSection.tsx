@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { categorizeWithHint } from '../lib/categorize';
+import { useEffect, useMemo, useState } from 'react';
 import {
   autoMapColumns,
   extractRows,
@@ -12,7 +11,8 @@ import {
 import { buildBatchHashes, deleteBatch, existsKey, findExistingHashes, insertDrafts } from '../lib/data';
 import { parseStatementLines } from '../lib/statementParse';
 import { isTransferDescription } from '../lib/transfers';
-import type { Account, DraftTx, OwnerKey } from '../lib/types';
+import { categorizeLearned, learnCategories } from '../lib/merchant';
+import type { Account, DraftTx, OwnerKey, Tx } from '../lib/types';
 import { ReviewTable } from './ReviewTable';
 
 type RickusSource = 'csv' | 'paste' | 'manual';
@@ -36,14 +36,25 @@ export function ImportSection({
   onImported,
   categories,
   accounts = [],
+  txs = [],
 }: {
   owner: OwnerKey;
   userId: string;
   onImported: () => void;
   categories?: string[];
   accounts?: Account[];
+  /** Everything already imported, so this import can follow the categories
+   *  you have already chosen instead of re-deriving generic ones. */
+  txs?: Tx[];
 }) {
   const ownerAccounts = accounts.filter((a) => a.owner_key === owner);
+  // Rebuilt when the transaction list changes, which is cheap next to the
+  // import itself and keeps a category fixed on the review screen from being
+  // forgotten by the very next file.
+  const learned = useMemo(
+    () => learnCategories(txs.filter((t) => t.owner_key === owner)),
+    [txs, owner],
+  );
   const defaultAccount = ownerAccounts[0]?.key ?? null;
   const [open, setOpen] = useState(false);
   const [accountKey, setAccountKey] = useState<string | null>(defaultAccount);
@@ -82,7 +93,7 @@ export function ImportSection({
         amount: r.amount,
         // Transfers keep a clear "Transfer" label and are excluded from spend;
         // everything else runs through the normal categoriser.
-        category: transfer ? 'Transfer' : categorizeWithHint(r.description, r.category),
+        category: transfer ? 'Transfer' : categorizeLearned(r.description, r.category, learned),
         owner_key: owner,
         account_key: accountKey,
         is_transfer: transfer,
