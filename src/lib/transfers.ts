@@ -8,7 +8,6 @@
 //
 // Detection runs on the statement's description text. The patterns are drawn
 // from the real Capitec and Discovery exports:
-//   Capitec current → card:      "Banking App External Payment: Discovery Credit Car"
 //   Capitec current → notice:    "Banking App Transfer to Nuwe Foon/Nuwe Kar"
 //   Notice ← Capitec current:    "Banking App Transfer Received from Main Account"
 //   Card ← Capitec (repayment):  "CAPITEC   CREDIT"
@@ -17,8 +16,27 @@
 //   Card → Discovery savings:    "Savings" / "Credit to Savings" / notice payout
 //   Ring loan repayments:        "CAPITEC   RING"
 
+// The Capitec side of a Discovery card repayment — "Banking App External
+// Payment: Discovery Credit Car" — is deliberately NOT here.
+//
+// It is only a transfer if the card's own statement is imported, because then
+// the purchases it funded are counted on that side. The Discovery statement is
+// not imported and is not going to be: the card was used for fuel and Vodacom
+// airtime, settled from Capitec, so the repayment line IS the only record of
+// that spending. Flagging it would delete roughly R8k a month of real spend
+// from every dashboard and show it as an improvement.
+//
+// It was matched here once, which is why the ~36 repayments already in the
+// table are is_transfer = false: they were imported before this module
+// existed. Re-adding the pattern would split identical rows by import date —
+// history counted as spend, everything new excluded.
+//
+// If the Discovery statement is ever imported, restore
+// `/discovery\s+credit\s+car/i` below AND backfill those rows, together. The
+// card-side patterns further down ("CAPITEC   CREDIT" and friends) are the
+// mirror of it and stay: they can only ever appear on a Discovery export, so
+// they are dormant until that day.
 const TRANSFER_PATTERNS: RegExp[] = [
-  /discovery\s+credit\s+car/i, // Capitec side of a card repayment
   // Capitec → any savings plan. Anchored on "Banking App Transfer to", which
   // is the wording Capitec reserves for moving money between your OWN
   // accounts; paying someone else reads "Banking App External Payment" or

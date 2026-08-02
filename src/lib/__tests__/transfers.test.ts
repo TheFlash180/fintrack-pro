@@ -2,11 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { isTransferDescription } from '../transfers';
 
 describe('isTransferDescription', () => {
-  it('flags Capitec → card / notice-savings moves', () => {
-    expect(isTransferDescription('Banking App External Payment: Discovery Credit Car')).toBe(true);
+  it('flags Capitec → notice-savings moves', () => {
     expect(isTransferDescription('Banking App Transfer to Nuwe Foon: Transfer')).toBe(true);
     expect(isTransferDescription('Banking App Transfer to Nuwe Kar: Transfer')).toBe(true);
     expect(isTransferDescription('Banking App Transfer Received from Main Account: Transfer')).toBe(true);
+  });
+
+  it('does NOT flag the Capitec side of a Discovery card repayment', () => {
+    // The card's own statement is not imported, so this line is the only
+    // record of what the card bought (fuel and Vodacom airtime). Calling it a
+    // transfer would drop that spending out of the totals entirely — and would
+    // treat it differently from the repayments already in the table, which
+    // predate this module and are stored as spend. See transfers.ts.
+    expect(isTransferDescription('Banking App External Payment: Discovery Credit Car'))
+      .toBe(false);
   });
 
   it('flags Discovery card / savings transfers', () => {

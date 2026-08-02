@@ -21,8 +21,13 @@ hosting, Recharts dashboards. Installable on phone and desktop.
   fix dates/amounts/categories/owner, delete rows, add rows. Nothing writes to
   the database until "Confirm import".
 - **No double-counting.** Each transaction gets a SHA-256 hash of
-  date+amount+description; re-uploading the same statement flags rows as
-  already imported and the database unique index skips them regardless.
+  date+amount+description; re-uploading the same statement flags those rows as
+  already imported on the review screen, so you confirm without them. A unique
+  index on `(owner_key, dedupe_hash)` backs that up — but it *rejects*, it does
+  not skip: a duplicate reaching the insert fails the whole batch with an
+  error, rather than being quietly dropped. That is deliberate. The review
+  screen is the mechanism; the index is there to make a bug loud instead of
+  letting it double your history in silence.
 - **Auto-categorisation that learns.** Priority is: how you filed that merchant
   last time → the bank's own category column → SA-merchant keyword rules
   ([src/lib/categorize.ts](src/lib/categorize.ts) — edit freely). Matching is on
@@ -96,5 +101,13 @@ a small edit in [src/lib/statementParse.ts](src/lib/statementParse.ts).
 ## Out of scope for v1 (by design)
 
 AI-powered parsing (zero-cost constraint), realtime live sync (fetch-on-load is
-fine), Rickus's 4-year Excel history migration (follow-up task), and Anjoné's
-detailed budget methodology (schema already supports extending budgets).
+fine), and Anjoné's detailed budget methodology (schema already supports
+extending budgets).
+
+Rickus's 4-year Excel history **was** migrated and is no longer a follow-up:
+the ledger starts at February 2022, and those rows carry a `[Legacy Excel]`
+prefix in the description so they are distinguishable from bank-imported ones.
+
+Note that the per-category monthly budgets described above are built but
+unused — the `budgets` table is empty. Nothing depends on them; they are just
+not part of how the household actually uses the app yet.

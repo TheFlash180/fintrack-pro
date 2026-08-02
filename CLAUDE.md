@@ -58,6 +58,32 @@ own accounts, so any future savings pot is caught without editing a list. It
 deliberately does not match bare "transfer": `Payment Received: Absa Bank
 Reinardt Transfer` is real income.
 
+**The Discovery credit-card repayment is the exception, and it is not a
+transfer here.** `Banking App External Payment: Discovery Credit Car` is a
+transfer only if the card's own statement is imported, because that is where
+the purchases it funded would be counted. That statement is not imported and
+is not going to be — the card was used for fuel and Vodacom airtime, settled
+from Capitec, so **the repayment line is the only record of that spending**
+(~R95k across the 12 months to July 2026, the largest single category).
+Flagging it would delete about R8k a month of real spend and render it as an
+improvement in the month-over-month callout.
+
+The ~36 repayments already stored have `is_transfer = false` because they were
+imported before `transfers.ts` and migration-003 existed. That accident now
+matches the intended behaviour, so **leave them**. Re-adding the pattern
+without also backfilling would split identical rows by import date: history
+counted as spend, everything new excluded.
+
+If the Discovery statement is ever imported, restore the pattern *and* backfill
+those rows in the same change. The card-side patterns (`CAPITEC   CREDIT` and
+friends) are its mirror and stay — they can only appear on a Discovery export,
+so they are dormant until then.
+
+**There is no backfill for `is_transfer` generally.** The flag is only ever set
+at import time, in `ImportSection.tsx`. Any row imported before 24 July 2026 is
+`false` whatever it is, so a new pattern added to `transfers.ts` changes future
+imports only. Decide what happens to the history at the same time.
+
 ## Practical
 
 - `npm run build` is what CI runs; deploy is on push to `main`, no PR checks.

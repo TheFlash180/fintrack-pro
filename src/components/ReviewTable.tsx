@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CATEGORIES, type DraftTx, type OwnerKey } from '../lib/types';
+import { sastDay } from '../lib/format';
 
 export function ReviewTable({
   drafts,
@@ -35,7 +36,7 @@ export function ReviewTable({
     onChange([
       ...drafts,
       {
-        tx_date: new Date().toISOString().slice(0, 10),
+        tx_date: sastDay(),
         description: '',
         amount: 0,
         category: 'Uncategorised',

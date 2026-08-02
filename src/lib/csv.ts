@@ -64,8 +64,22 @@ export interface ColumnMapping {
 /** Guess the columns from the header row (English + Afrikaans). Returns null
  *  when required columns can't be identified — the UI then asks the user. */
 export function autoMapColumns(headers: string[]): ColumnMapping | null {
-  const find = (patterns: RegExp[]) =>
-    headers.findIndex((h) => patterns.some((p) => p.test(h.trim())));
+  /** First header matching the FIRST pattern that matches anything — the
+   *  pattern list is a preference order, most specific first.
+   *
+   *  It has to loop patterns on the outside. Scanning headers on the outside
+   *  (`headers.findIndex(h => patterns.some(...))`) returns the first matching
+   *  COLUMN instead, which makes the ordering inert: with an "Original
+   *  Description" column ahead of "Description", the loose `/descri/i`
+   *  fallback would win over the exact `/^description$/i`. Both banks happen
+   *  to order their columns so the two agree, which is why it went unnoticed. */
+  const find = (patterns: RegExp[]) => {
+    for (const p of patterns) {
+      const i = headers.findIndex((h) => p.test(h.trim()));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
 
   const date = find([/posting date/i, /^date$/i, /transaction date/i, /^datum/i, /date/i]);
   const description = find([/^description$/i, /narrative/i, /details/i, /beskrywing/i, /descri/i, /reference/i]);
@@ -175,29 +189,55 @@ export function extractRows(table: CsvTable, mapping: ColumnMapping): { ok: CsvR
     const date = parseDateFlexible(cell(r, mapping.date));
     const description = cell(r, mapping.description).trim();
 
-    let amount: number | null = null;
+    // A row can carry more than one amount. Capitec normally puts a fee on a
+    // row of its own, but nothing guarantees it: a purchase charged a fee can
+    // fill Money Out and Fee on the SAME row, and taking only the first
+    // non-zero column silently dropped the fee — money missing from the
+    // ledger with nothing to show it had gone.
+    const found: { amount: number; suffix: string; category?: string }[] = [];
     if (mapping.amount !== null) {
-      amount = parseAmountFlexible(cell(r, mapping.amount));
+      const v = parseAmountFlexible(cell(r, mapping.amount));
+      if (v !== null) found.push({ amount: v, suffix: '' });
     } else {
       // Split columns: money in = income, money out / fee = expense.
       // Capitec writes Money Out and Fee already negative; be sign-agnostic.
       const inVal = parseAmountFlexible(cell(r, mapping.moneyIn));
       const outVal = parseAmountFlexible(cell(r, mapping.moneyOut));
       const feeVal = parseAmountFlexible(cell(r, mapping.fee));
-      if (inVal !== null && inVal !== 0) amount = Math.abs(inVal);
-      else if (outVal !== null && outVal !== 0) amount = -Math.abs(outVal);
-      else if (feeVal !== null && feeVal !== 0) amount = -Math.abs(feeVal);
+      if (inVal !== null && inVal !== 0) found.push({ amount: Math.abs(inVal), suffix: '' });
+      if (outVal !== null && outVal !== 0) found.push({ amount: -Math.abs(outVal), suffix: '' });
+      if (feeVal !== null && feeVal !== 0) {
+        // Sharing a row with another amount means this is a charge ON that
+        // transaction, so it becomes its own row: tagged in the description so
+        // the review screen shows which is which, and carrying the bank's own
+        // "Fees" wording so it categorises as a bank fee rather than
+        // inheriting the category of the purchase it was charged on.
+        const alongside = found.length > 0;
+        found.push({
+          amount: -Math.abs(feeVal),
+          suffix: alongside ? ' (fee)' : '',
+          category: alongside ? 'Fees' : undefined,
+        });
+      }
     }
 
     // Skip pending transactions (Capitec prefixes them "(Pending)"). They're
     // not final and reappear with a settled description/date on the next
     // export — importing them now would duplicate once they clear.
-    if (!date || amount === null || /^\(pending\)/i.test(description)) {
+    if (!date || found.length === 0 || /^\(pending\)/i.test(description)) {
       skipped++;
       continue;
     }
     const category = cell(r, mapping.category).trim();
-    ok.push({ tx_date: date, description, amount, ...(category ? { category } : {}) });
+    for (const f of found) {
+      const cat = f.category ?? category;
+      ok.push({
+        tx_date: date,
+        description: description + f.suffix,
+        amount: f.amount,
+        ...(cat ? { category: cat } : {}),
+      });
+    }
   }
   return { ok, skipped };
 }
