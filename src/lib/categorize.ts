@@ -31,6 +31,10 @@ export const RULES: Rule[] = [
   // transport
   { match: /uber(?!\s?eats)|bolt\b|gautrain|toll|sanral|e-?toll|parking|tap n go/i, category: 'Transport' },
   // medical
+  // "clicks baby" must be tested BEFORE the bare "clicks" below, or the
+  // pharmacy rule swallows it — first match wins, so a more specific form of
+  // an existing keyword only works above it, not further down the list.
+  { match: /clicks baby/i, category: 'Shopping' },
   { match: /clicks|dis-?chem|pharmac|doctor|dr\s|hospital|pathcare|lancet|medirite|4d scan/i, category: 'Medical' },
   // credit card repayments
   { match: /credit car/i, category: 'Credit Card' },
@@ -51,7 +55,7 @@ export const RULES: Rule[] = [
   // personal care
   { match: /barber|salon|haircut/i, category: 'Personal Care' },
   // shopping
-  { match: /takealot|makro|game\b|builders|leroy|west pack|clicks baby|amazon|temu|shein/i, category: 'Shopping' },
+  { match: /takealot|makro|game\b|builders|leroy|west pack|amazon|temu|shein/i, category: 'Shopping' },
   // groceries (butcheries)
   { match: /slaghuis|butcher/i, category: 'Groceries' },
   // bank fees (incl. Afrikaans "diensfooi")

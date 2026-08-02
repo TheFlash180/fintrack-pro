@@ -79,3 +79,15 @@ describe('categorizeWithHint', () => {
     expect(categorizeWithHint('Purchase Checkers Sandton')).toBe('Groceries');
   });
 });
+
+describe('a specific keyword must outrank a broader one that contains it', () => {
+  it('files Clicks Baby as Shopping, not Medical', () => {
+    // The Shopping rule listed "clicks baby", but the bare "clicks" pharmacy
+    // rule sat above it and matched first, so the token never fired.
+    expect(categorize('Clicks Baby Fourways (Card 4481)')).toBe('Shopping');
+  });
+
+  it('leaves the ordinary Clicks pharmacy on Medical', () => {
+    expect(categorize('Clicks Randburg (Card 4481)')).toBe('Medical');
+  });
+});

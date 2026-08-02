@@ -11,6 +11,7 @@ import {
 import { buildBatchHashes, deleteBatch, existsKey, findExistingHashes, insertDrafts } from '../lib/data';
 import { parseStatementLines } from '../lib/statementParse';
 import { isTransferDescription } from '../lib/transfers';
+import { sastDay } from '../lib/format';
 import { categorizeLearned, learnCategories } from '../lib/merchant';
 import type { Account, DraftTx, OwnerKey, Tx } from '../lib/types';
 import { ReviewTable } from './ReviewTable';
@@ -247,7 +248,7 @@ export function ImportSection({
   const startManual = () => {
     setDrafts([
       {
-        tx_date: new Date().toISOString().slice(0, 10),
+        tx_date: sastDay(),
         description: '',
         amount: 0,
         category: 'Uncategorised',

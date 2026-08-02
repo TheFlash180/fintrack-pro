@@ -129,6 +129,26 @@ describe('Discovery CSV export (single signed Amount + "Value Date" column)', ()
   });
 });
 
+describe('header matching is by pattern preference, not column position', () => {
+  // Both real banks order their columns so that the specific pattern also
+  // happens to sit leftmost, which hid the difference. These headers separate
+  // the two: the loose fallback matches an EARLIER column than the exact one.
+  it('prefers the exact "Description" over an earlier "Original Description"', () => {
+    const headers = ['Date', 'Original Description', 'Description', 'Amount'];
+    expect(autoMapColumns(headers)?.description).toBe(2);
+  });
+
+  it('prefers "Posting Date" over an earlier "Transaction Date"', () => {
+    const headers = ['Transaction Date', 'Posting Date', 'Description', 'Amount'];
+    expect(autoMapColumns(headers)?.date).toBe(1);
+  });
+
+  it('still falls through to the loose pattern when nothing specific matches', () => {
+    const headers = ['Value Date', 'Description', 'Amount'];
+    expect(autoMapColumns(headers)?.date).toBe(0);
+  });
+});
+
 describe('flexible parsing', () => {
   it('parses date formats', () => {
     expect(parseDateFlexible('2026/06/15')).toBe('2026-06-15');
@@ -145,5 +165,43 @@ describe('flexible parsing', () => {
     expect(parseAmountFlexible('123.45-')).toBe(-123.45);
     expect(parseAmountFlexible('R2,500.00')).toBe(2500);
     expect(parseAmountFlexible('abc')).toBeNull();
+  });
+});
+
+describe('a row carrying both a purchase and a fee', () => {
+  // Capitec normally gives a fee its own row (see the real fixture above), so
+  // this shape is defensive. Taking only the first non-zero column used to
+  // drop the fee entirely, which is money vanishing with nothing to show it.
+  const csv = `"Posting Date","Description","Category","Money In","Money Out","Fee"
+2026-07-15,"Intl Purchase Steam (Card 4481)","Software/Games",,-64.99,-11.50
+2026-07-16,"Debit Order Fee","Fees",,,-3.00
+2026-07-17,"Checkers Fourways","Groceries",,-402.10,`;
+
+  it('keeps both amounts instead of dropping the fee', () => {
+    const table = parseCsv(csv);
+    const { ok, skipped } = extractRows(table, autoMapColumns(table.headers)!);
+    expect(skipped).toBe(0);
+    expect(ok).toHaveLength(4); // 3 rows in, 4 out — the fee is split off
+
+    const steam = ok.filter((r) => r.description.startsWith('Intl Purchase Steam'));
+    expect(steam.map((r) => r.amount)).toEqual([-64.99, -11.5]);
+  });
+
+  it('tags the split-off fee so the review screen can tell them apart', () => {
+    const table = parseCsv(csv);
+    const { ok } = extractRows(table, autoMapColumns(table.headers)!);
+    const fee = ok.find((r) => r.description.endsWith('(fee)'))!;
+    expect(fee.amount).toBe(-11.5);
+    // Not "Software/Games" inherited from the purchase it was charged on.
+    expect(fee.category).toBe('Fees');
+  });
+
+  it('leaves a fee that already has its own row exactly as it was', () => {
+    const table = parseCsv(csv);
+    const { ok } = extractRows(table, autoMapColumns(table.headers)!);
+    const own = ok.find((r) => r.description === 'Debit Order Fee')!;
+    expect(own.amount).toBe(-3);
+    expect(own.category).toBe('Fees'); // the bank's own column, not injected
+    expect(ok.some((r) => r.description === 'Debit Order Fee (fee)')).toBe(false);
   });
 });
