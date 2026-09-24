@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import { dedupeHash } from './dedupe';
+import { fetchAllPages, type PageResult } from './paging';
 import type { Account, Budget, DraftTx, Tx } from './types';
 
 // The whole household history is small (personal-finance scale), so we fetch
@@ -25,22 +26,31 @@ function isMissingColumnError(error: unknown): boolean {
  *  back to the legacy columns and default them, so the app never hard-fails
  *  during the window between deploy and migration. */
 async function fetchTxs(): Promise<{ data: Tx[] | null; error: unknown }> {
-  const full = await supabase
-    .from('transactions')
-    .select(TX_COLS_FULL)
-    .order('tx_date', { ascending: false })
-    .range(0, MAX_ROWS - 1);
+  const full = await fetchAllTxRows(TX_COLS_FULL);
   if (!full.error) {
-    return { data: normalizeTxs(full.data as Record<string, unknown>[]), error: null };
+    return { data: normalizeTxs(full.data ?? []), error: null };
   }
   if (!isMissingColumnError(full.error)) return { data: null, error: full.error };
-  const legacy = await supabase
-    .from('transactions')
-    .select(TX_COLS_LEGACY)
-    .order('tx_date', { ascending: false })
-    .range(0, MAX_ROWS - 1);
+  const legacy = await fetchAllTxRows(TX_COLS_LEGACY);
   if (legacy.error) return { data: null, error: legacy.error };
-  return { data: normalizeTxs(legacy.data as Record<string, unknown>[]), error: null };
+  return { data: normalizeTxs(legacy.data ?? []), error: null };
+}
+
+/** Every transaction, page by page. A single `.range(0, MAX_ROWS - 1)` is cut
+ *  to the API's 1000-row cap without an error, which dropped the oldest rows
+ *  — see paging.ts. `id` breaks ties within a day so a page boundary cannot
+ *  skip or repeat one of several same-day rows. */
+function fetchAllTxRows(cols: string) {
+  return fetchAllPages<Record<string, unknown>>(
+    (from, to) =>
+      supabase
+        .from('transactions')
+        .select(cols)
+        .order('tx_date', { ascending: false })
+        .order('id', { ascending: true })
+        .range(from, to) as unknown as PromiseLike<PageResult<Record<string, unknown>>>,
+    MAX_ROWS,
+  );
 }
 
 function normalizeTxs(rows: Record<string, unknown>[]): Tx[] {
