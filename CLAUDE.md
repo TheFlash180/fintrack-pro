@@ -86,11 +86,17 @@ imports only. Decide what happens to the history at the same time.
 
 ## Practical
 
-- `npm run build` is what CI runs; deploy is on push to `main`, no PR checks.
+- CI (`deploy.yml`) runs the tests and the build on every pull request and on
+  push to `main`; only a push to `main` deploys.
+- **The API returns at most 1000 rows per request, without an error.** A
+  single `.range(0, 49999)` came back with 1000 of 1141 transactions and the
+  dashboards silently lost Feb 2022 - Jun 2023. `fetchTxs` now pages through
+  `src/lib/paging.ts`; any new read that can outgrow 1000 rows must too, with
+  a unique column as the last `.order`.
 - Tests are vitest in `src/lib/__tests__/`. Keep logic in `src/lib/` free of
   React so it stays testable.
 - Pure-logic modules: `csv`, `statementParse`, `pdfExtract`, `dedupe`,
-  `categorize`, `merchant`, `transfers`, `aggregate`, `format`.
+  `categorize`, `merchant`, `transfers`, `aggregate`, `format`, `paging`.
 - The dev container's proxy blocks `supabase.co`, so use the Supabase MCP tools
   for data rather than the REST API.
 - To screenshot: build with dummy `VITE_SUPABASE_*` values, seed a fake session
